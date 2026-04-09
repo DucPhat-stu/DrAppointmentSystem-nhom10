@@ -1,25 +1,21 @@
 import { createContext, useEffect, useState } from 'react';
+import { clearSession, loadSession, persistSession } from '../services/sessionStorageService.js';
 
 export const AuthContext = createContext({
   session: null,
   setSession: () => {},
 });
 
-const SESSION_KEY = 'healthcare.session';
-
 export function AppProviders({ children }) {
-  const [session, setSession] = useState(() => {
-    const rawSession = window.sessionStorage.getItem(SESSION_KEY);
-    return rawSession ? JSON.parse(rawSession) : null;
-  });
+  const [session, setSession] = useState(() => loadSession());
 
   useEffect(() => {
     if (session) {
-      window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      persistSession(session);
       return;
     }
 
-    window.sessionStorage.removeItem(SESSION_KEY);
+    clearSession();
   }, [session]);
 
   return (
@@ -28,4 +24,3 @@ export function AppProviders({ children }) {
     </AuthContext.Provider>
   );
 }
-

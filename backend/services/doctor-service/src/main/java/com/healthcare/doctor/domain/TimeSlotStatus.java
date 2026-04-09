@@ -1,4 +1,4 @@
-package com.healthcare.shared.api;
+package com.healthcare.doctor.domain;
 
 public enum TimeSlotStatus {
     AVAILABLE,

@@ -29,6 +29,7 @@
 - Tao `docker/compose.yml` voi PostgreSQL, Redis, RabbitMQ.
 - Chot convention env: `APP_PORT`, `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `RABBITMQ_URL`.
 - Chot response envelope, error code, role, enum.
+- Ghi lai guardrail SOLID va refactor backlog trong `SOLID_GUIDELINES.md`.
 
 ### Phase 1
 - Implement `auth-service` voi register, login, refresh, logout, JWT issue.

@@ -1,5 +1,6 @@
 package com.healthcare.shared.common.web;
 
+import com.healthcare.shared.api.ApiErrorResponse;
 import com.healthcare.shared.api.ErrorCode;
 import com.healthcare.shared.common.exception.ApiException;
 import org.springframework.http.HttpStatus;
@@ -7,14 +8,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.List;
 
-@RestControllerAdvice
-public class GlobalExceptionHandler {
+public abstract class BaseApiExceptionHandler {
+    private final ApiResponseFactory apiResponseFactory;
+
+    protected BaseApiExceptionHandler(ApiResponseFactory apiResponseFactory) {
+        this.apiResponseFactory = apiResponseFactory;
+    }
+
     @ExceptionHandler(ApiException.class)
-    public ResponseEntity<?> handleApiException(ApiException exception) {
+    public ResponseEntity<ApiErrorResponse> handleApiException(ApiException exception) {
         HttpStatus status = switch (exception.getErrorCode()) {
             case VALIDATION_ERROR -> HttpStatus.BAD_REQUEST;
             case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
@@ -25,11 +30,11 @@ public class GlobalExceptionHandler {
         };
 
         return ResponseEntity.status(status)
-                .body(ApiResponseFactory.error(exception.getErrorCode(), exception.getMessage(), exception.getDetails()));
+                .body(apiResponseFactory.error(exception.getErrorCode(), exception.getMessage(), exception.getDetails()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<?> handleValidation(MethodArgumentNotValidException exception) {
+    public ResponseEntity<ApiErrorResponse> handleValidation(MethodArgumentNotValidException exception) {
         List<String> details = exception.getBindingResult()
                 .getFieldErrors()
                 .stream()
@@ -37,13 +42,13 @@ public class GlobalExceptionHandler {
                 .toList();
 
         return ResponseEntity.badRequest()
-                .body(ApiResponseFactory.error(ErrorCode.VALIDATION_ERROR, "Validation failed", details));
+                .body(apiResponseFactory.error(ErrorCode.VALIDATION_ERROR, "Validation failed", details));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleUnexpected(Exception exception) {
+    public ResponseEntity<ApiErrorResponse> handleUnexpected(Exception exception) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponseFactory.error(
+                .body(apiResponseFactory.error(
                         ErrorCode.SERVICE_UNAVAILABLE,
                         "Unexpected error while processing the request",
                         List.of(exception.getClass().getSimpleName())

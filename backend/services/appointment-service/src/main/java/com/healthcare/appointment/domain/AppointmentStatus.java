@@ -1,4 +1,4 @@
-package com.healthcare.shared.api;
+package com.healthcare.appointment.domain;
 
 public enum AppointmentStatus {
     PENDING,

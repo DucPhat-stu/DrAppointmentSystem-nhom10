@@ -23,9 +23,11 @@
 ## 3. Nguyen tac lam viec
 - `idea.md` la nguon goc nghiep vu; `sequence.md` la nguon goc cho interaction va event flow.
 - Moi thay doi contract API, enum, business rule hoac event phai cap nhat dong thoi `SKILL.md`, `BA.md`, `TESTING.md`.
+- Cac task moi phai doi chieu them voi `SOLID_GUIDELINES.md` de tranh day domain rule vao `shared/*` va tranh lam shared module thanh application layer.
 - Uu tien hoan thanh MVP end-to-end truoc khi mo rong sang 7 service con lai.
 - Giu service doc lap, database tach rieng theo service, chia se thong tin qua REST va RabbitMQ.
 - Khong dua AI, payment, prescription, report, admin dashboard day du vao sprint MVP; chi mo khoa interface neu luong hien tai can stub.
+
 
 ## 4. Cau truc repo muc tieu
 
