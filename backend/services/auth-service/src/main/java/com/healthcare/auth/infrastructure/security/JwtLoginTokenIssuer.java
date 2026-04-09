@@ -1,6 +1,8 @@
 package com.healthcare.auth.infrastructure.security;
 
 import com.healthcare.auth.application.IssuedTokenPair;
+import com.healthcare.auth.application.AccessTokenIssuer;
+import com.healthcare.auth.application.AccessTokenResult;
 import com.healthcare.auth.application.LoginTokenIssuer;
 import com.healthcare.auth.application.RolePermissionMapper;
 import com.healthcare.auth.application.UserCredential;
@@ -21,7 +23,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Component
-public class JwtLoginTokenIssuer implements LoginTokenIssuer {
+public class JwtLoginTokenIssuer implements LoginTokenIssuer, AccessTokenIssuer {
     private final JwtProperties jwtProperties;
     private final Clock clock;
     private final RolePermissionMapper rolePermissionMapper;
@@ -35,8 +37,25 @@ public class JwtLoginTokenIssuer implements LoginTokenIssuer {
     @Override
     public IssuedTokenPair issue(UserCredential userCredential) {
         Instant issuedAt = clock.instant();
-        Instant accessExpiresAt = issuedAt.plusSeconds(jwtProperties.getAccessTokenExpiresInSeconds());
         Instant refreshExpiresAt = issuedAt.plusSeconds(jwtProperties.getRefreshTokenExpiresInSeconds());
+        AccessTokenResult accessTokenResult = issueAccessToken(userCredential);
+
+        String refreshToken = UUID.randomUUID().toString();
+
+        return new IssuedTokenPair(
+                accessTokenResult.accessToken(),
+                refreshToken,
+                accessTokenResult.expiresInSeconds(),
+                OffsetDateTime.ofInstant(issuedAt, ZoneOffset.UTC),
+                OffsetDateTime.ofInstant(refreshExpiresAt, ZoneOffset.UTC),
+                accessTokenResult.permissions()
+        );
+    }
+
+    @Override
+    public AccessTokenResult issueAccessToken(UserCredential userCredential) {
+        Instant issuedAt = clock.instant();
+        Instant accessExpiresAt = issuedAt.plusSeconds(jwtProperties.getAccessTokenExpiresInSeconds());
         Set<Permission> permissions = rolePermissionMapper.map(userCredential.role());
 
         SecretKey secretKey = Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
@@ -51,14 +70,9 @@ public class JwtLoginTokenIssuer implements LoginTokenIssuer {
                 .signWith(secretKey)
                 .compact();
 
-        String refreshToken = UUID.randomUUID().toString();
-
-        return new IssuedTokenPair(
+        return new AccessTokenResult(
                 accessToken,
-                refreshToken,
                 jwtProperties.getAccessTokenExpiresInSeconds(),
-                OffsetDateTime.ofInstant(issuedAt, ZoneOffset.UTC),
-                OffsetDateTime.ofInstant(refreshExpiresAt, ZoneOffset.UTC),
                 permissions
         );
     }

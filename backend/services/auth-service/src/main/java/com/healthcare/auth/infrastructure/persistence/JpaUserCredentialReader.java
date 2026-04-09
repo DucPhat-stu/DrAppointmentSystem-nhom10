@@ -5,6 +5,7 @@ import com.healthcare.auth.application.UserCredentialReader;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 public class JpaUserCredentialReader implements UserCredentialReader {
@@ -17,13 +18,22 @@ public class JpaUserCredentialReader implements UserCredentialReader {
     @Override
     public Optional<UserCredential> findByEmail(String email) {
         return userAccountJpaRepository.findByEmailIgnoreCase(email)
-                .map(user -> new UserCredential(
-                        user.getId(),
-                        user.getEmail(),
-                        user.getPasswordHash(),
-                        user.getRole(),
-                        user.getStatus()
-                ));
+                .map(this::toUserCredential);
+    }
+
+    @Override
+    public Optional<UserCredential> findById(UUID userId) {
+        return userAccountJpaRepository.findById(userId)
+                .map(this::toUserCredential);
+    }
+
+    private UserCredential toUserCredential(UserAccountEntity user) {
+        return new UserCredential(
+                user.getId(),
+                user.getEmail(),
+                user.getPasswordHash(),
+                user.getRole(),
+                user.getStatus()
+        );
     }
 }
-

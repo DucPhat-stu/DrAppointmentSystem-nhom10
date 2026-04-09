@@ -69,6 +69,7 @@ postman/
 ### 5.2 Cac token hien thi trong Postman
 - Login response tra token ro rang trong `data.accessToken` va `data.refreshToken`.
 - Login response tra them `data.role` va `data.permissions` de Postman nhin duoc RBAC mapping ma khong can decode JWT.
+- Refresh response tra access token moi trong `data.accessToken`; request body gui `refreshToken`.
 - Mau response:
 
 ```json
@@ -102,6 +103,30 @@ pm.environment.set("patientRole", body.data.role);
 
 ```text
 Authorization: Bearer {{accessTokenPatient}}
+```
+
+- Mau request refresh token:
+
+```json
+{
+  "refreshToken": "{{refreshTokenPatient}}"
+}
+```
+
+- Postman Tests script sau refresh:
+
+```javascript
+const body = pm.response.json();
+pm.environment.set("accessTokenPatient", body.data.accessToken);
+pm.environment.set("patientRole", body.data.role);
+```
+
+- Mau request logout:
+
+```json
+{
+  "refreshToken": "{{refreshTokenPatient}}"
+}
 ```
 
 ## 6. Test case bat buoc

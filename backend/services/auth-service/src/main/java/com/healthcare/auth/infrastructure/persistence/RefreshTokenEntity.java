@@ -73,5 +73,24 @@ public class RefreshTokenEntity {
     public void setDeviceInfo(String deviceInfo) {
         this.deviceInfo = deviceInfo;
     }
-}
 
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public OffsetDateTime getExpiresAt() {
+        return expiresAt;
+    }
+
+    public boolean isRevoked() {
+        return revoked;
+    }
+}
