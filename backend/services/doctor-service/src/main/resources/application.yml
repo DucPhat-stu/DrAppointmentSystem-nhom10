@@ -1,0 +1,41 @@
+server:
+  port: ${APP_PORT:8083}
+
+spring:
+  application:
+    name: doctor-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/doctor_db}
+    username: ${DB_USERNAME:healthcare}
+    password: ${DB_PASSWORD:healthcare}
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+  flyway:
+    enabled: true
+  rabbitmq:
+    addresses: ${RABBITMQ_URL:amqp://healthcare:healthcare@localhost:5672}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+app:
+  service:
+    name: doctor-service
+    description: Doctor availability and timeslot foundation.
+    database: doctor_db
+    rabbitmq-enabled: false
+    redis-enabled: false
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:change-this-before-shared-environments}
+

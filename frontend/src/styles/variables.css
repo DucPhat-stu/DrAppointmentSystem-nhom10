@@ -1,0 +1,10 @@
+:root {
+  font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+  color: #0f2940;
+  background: #eef4f7;
+  --color-primary: #0b7fab;
+  --color-accent: #e66b3d;
+  --color-ink: #16364d;
+  --color-muted: #587387;
+}
+

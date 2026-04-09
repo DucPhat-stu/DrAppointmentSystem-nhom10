@@ -1,0 +1,65 @@
+.shell {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(26, 115, 232, 0.18), transparent 36%),
+    linear-gradient(180deg, #f7fbff 0%, #eef4f7 100%);
+  color: var(--color-ink);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(12, 61, 89, 0.12);
+  background: rgba(255, 255, 255, 0.76);
+  backdrop-filter: blur(12px);
+}
+
+.brand {
+  color: var(--color-ink);
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.link,
+.activeLink {
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
+  text-decoration: none;
+  color: var(--color-muted);
+}
+
+.activeLink {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.logoutButton {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.6rem 0.9rem;
+  background: var(--color-accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.main {
+  padding: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+

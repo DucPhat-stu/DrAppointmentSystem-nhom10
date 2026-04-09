@@ -1,0 +1,10 @@
+backend/**/target/
+frontend/node_modules/
+frontend/dist/
+docker/.env
+docker/postgres/data/
+.idea/
+.vscode/
+*.log
+*.tmp
+
