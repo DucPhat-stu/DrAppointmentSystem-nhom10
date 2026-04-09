@@ -5,6 +5,7 @@ import com.healthcare.auth.application.LoginResult;
 import com.healthcare.auth.application.LoginUseCase;
 import com.healthcare.shared.api.ApiResponse;
 import com.healthcare.shared.common.web.ApiResponseFactory;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,7 +23,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ApiResponse<LoginResponse> login(@RequestBody LoginRequest request) {
+    public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         LoginResult result = loginUseCase.login(new LoginCommand(request.email(), request.password()));
         LoginResponse response = new LoginResponse(
                 result.accessToken(),

@@ -25,7 +25,9 @@
   - `doctorEmail`
   - `doctorPassword`
   - `accessTokenPatient`
+  - `refreshTokenPatient`
   - `accessTokenDoctor`
+  - `refreshTokenDoctor`
   - `appointmentId`
   - `slotId`
 
@@ -63,6 +65,37 @@ postman/
 - `03-appointment`: create appointment, get detail, cancel, reschedule, doctor confirm, duplicate booking conflict.
 - `04-notification-smoke`: list notifications, mark as read, verify side effect sau event.
 - `99-e2e-smoke`: flow patient login -> browse doctor -> book -> doctor confirm -> patient check notification.
+
+### 5.2 Cac token hien thi trong Postman
+- Login response tra token ro rang trong `data.accessToken` va `data.refreshToken`.
+- Mau response:
+
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "accessToken": "<jwt-access-token>",
+    "refreshToken": "<refresh-token>",
+    "expiresInSeconds": 900,
+    "role": "PATIENT"
+  }
+}
+```
+
+- Postman Tests script de luu token:
+
+```javascript
+const body = pm.response.json();
+pm.environment.set("accessTokenPatient", body.data.accessToken);
+pm.environment.set("refreshTokenPatient", body.data.refreshToken);
+```
+
+- Khi test API can JWT, dat header:
+
+```text
+Authorization: Bearer {{accessTokenPatient}}
+```
 
 ## 6. Test case bat buoc
 

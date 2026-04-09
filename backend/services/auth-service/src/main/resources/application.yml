@@ -38,4 +38,6 @@ app:
 security:
   jwt:
     secret: ${JWT_SECRET:change-this-before-shared-environments}
+    access-token-expires-in-seconds: ${JWT_ACCESS_TOKEN_EXPIRES_IN_SECONDS:900}
+    refresh-token-expires-in-seconds: ${JWT_REFRESH_TOKEN_EXPIRES_IN_SECONDS:604800}
 
