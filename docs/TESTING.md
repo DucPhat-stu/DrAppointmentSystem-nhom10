@@ -68,6 +68,7 @@ postman/
 
 ### 5.2 Cac token hien thi trong Postman
 - Login response tra token ro rang trong `data.accessToken` va `data.refreshToken`.
+- Login response tra them `data.role` va `data.permissions` de Postman nhin duoc RBAC mapping ma khong can decode JWT.
 - Mau response:
 
 ```json
@@ -78,7 +79,12 @@ postman/
     "accessToken": "<jwt-access-token>",
     "refreshToken": "<refresh-token>",
     "expiresInSeconds": 900,
-    "role": "PATIENT"
+    "role": "PATIENT",
+    "permissions": [
+      "AUTH_REFRESH",
+      "AUTH_LOGOUT",
+      "USER_PROFILE_READ"
+    ]
   }
 }
 ```
@@ -89,6 +95,7 @@ postman/
 const body = pm.response.json();
 pm.environment.set("accessTokenPatient", body.data.accessToken);
 pm.environment.set("refreshTokenPatient", body.data.refreshToken);
+pm.environment.set("patientRole", body.data.role);
 ```
 
 - Khi test API can JWT, dat header:

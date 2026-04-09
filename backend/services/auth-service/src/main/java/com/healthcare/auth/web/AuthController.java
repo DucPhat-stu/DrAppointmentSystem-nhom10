@@ -29,7 +29,8 @@ public class AuthController {
                 result.accessToken(),
                 result.refreshToken(),
                 result.expiresInSeconds(),
-                result.role()
+                result.role(),
+                result.permissions()
         );
 
         return apiResponseFactory.success("Login successful", response);

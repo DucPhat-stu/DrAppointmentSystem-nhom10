@@ -54,7 +54,8 @@ public class ValidatingLoginUseCase implements LoginUseCase {
                 issuedTokenPair.accessToken(),
                 issuedTokenPair.refreshToken(),
                 issuedTokenPair.expiresInSeconds(),
-                userCredential.role().name()
+                userCredential.role().name(),
+                issuedTokenPair.permissions()
         );
     }
 }
