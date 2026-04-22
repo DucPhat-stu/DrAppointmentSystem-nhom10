@@ -59,7 +59,7 @@ class ValidatingLoginUseCaseTest {
         when(userCredentialReader.findByEmail("patient01@healthcare.local")).thenReturn(Optional.of(userCredential));
         when(passwordVerifier.matches("Wrong@123", "$2a$12$hash")).thenReturn(false);
 
-        assertThatThrownBy(() -> useCase.login(new LoginCommand("patient01@healthcare.local", "Wrong@123")))
+        assertThatThrownBy(() -> useCase.login(new LoginCommand("patient01@healthcare.local", "Wrong@123", null)))
                 .isInstanceOf(ApiException.class)
                 .extracting(exception -> ((ApiException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.UNAUTHORIZED);
@@ -92,7 +92,7 @@ class ValidatingLoginUseCaseTest {
         when(passwordVerifier.matches("Patient@123", "$2a$12$hash")).thenReturn(true);
         when(loginTokenIssuer.issue(userCredential)).thenReturn(tokenPair);
 
-        LoginResult result = useCase.login(new LoginCommand("patient01@healthcare.local", "Patient@123"));
+        LoginResult result = useCase.login(new LoginCommand("patient01@healthcare.local", "Patient@123", Role.PATIENT));
 
         ArgumentCaptor<RefreshTokenRecord> tokenCaptor = ArgumentCaptor.forClass(RefreshTokenRecord.class);
         verify(refreshTokenWriter).save(tokenCaptor.capture());
@@ -109,5 +109,33 @@ class ValidatingLoginUseCaseTest {
         assertThat(result.expiresInSeconds()).isEqualTo(900);
         assertThat(result.role()).isEqualTo("PATIENT");
         assertThat(result.permissions()).containsExactlyInAnyOrder(Permission.AUTH_REFRESH, Permission.AUTH_LOGOUT);
+    }
+
+    @Test
+    void loginRejectsCredentialsWhenRequestedActorDoesNotMatch() {
+        UUID userId = UUID.randomUUID();
+        UserCredential userCredential = new UserCredential(
+                userId,
+                "patient01@healthcare.local",
+                "$2a$12$hash",
+                Role.PATIENT,
+                UserStatus.ACTIVE
+        );
+
+        when(userCredentialReader.findByEmail("patient01@healthcare.local")).thenReturn(Optional.of(userCredential));
+        when(passwordVerifier.matches("Patient@123", "$2a$12$hash")).thenReturn(true);
+
+        assertThatThrownBy(() -> useCase.login(new LoginCommand(
+                "patient01@healthcare.local",
+                "Patient@123",
+                Role.DOCTOR
+        )))
+                .isInstanceOf(ApiException.class)
+                .extracting(exception -> ((ApiException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.UNAUTHORIZED);
+
+        verify(loginTokenIssuer, never()).issue(userCredential);
+        verify(refreshTokenWriter, never()).save(org.mockito.ArgumentMatchers.any());
+        verify(userLoginTracker, never()).markSuccessfulLogin(userId, org.mockito.ArgumentMatchers.any());
     }
 }

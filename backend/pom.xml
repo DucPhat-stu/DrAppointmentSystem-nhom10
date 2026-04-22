@@ -35,6 +35,7 @@
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <testcontainers.version>1.19.8</testcontainers.version>
+        <spring-boot.run.skip>true</spring-boot.run.skip>
     </properties>
 
     <dependencyManagement>
@@ -49,4 +50,3 @@
         </dependencies>
     </dependencyManagement>
 </project>
-

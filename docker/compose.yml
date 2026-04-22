@@ -41,8 +41,8 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-healthcare}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-healthcare}
     ports:
-      - "${RABBITMQ_PORT:-5672}:5672"
-      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+      - "${RABBITMQ_PORT:-5673}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15673}:15672"
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
@@ -55,4 +55,3 @@ volumes:
   postgres-data:
   redis-data:
   rabbitmq-data:
-

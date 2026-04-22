@@ -15,6 +15,10 @@
     <name>notification-service</name>
     <description>Notification consumer and delivery skeleton.</description>
 
+    <properties>
+        <spring-boot.run.skip>false</spring-boot.run.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.healthcare</groupId>
@@ -56,6 +60,10 @@
             <artifactId>flyway-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
@@ -91,4 +99,3 @@
         </plugins>
     </build>
 </project>
-

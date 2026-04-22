@@ -24,6 +24,8 @@
   - `registerEmail`
   - `registerPhone`
   - `registerPassword`
+  - `patientActor`
+  - `doctorActor`
   - `patientSeedEmail`
   - `patientSeedPassword`
   - `doctorSeedEmail`
@@ -31,8 +33,12 @@
   - `registeredPatientEmail`
   - `accessTokenPatient`
   - `refreshTokenPatient`
+  - `patientRole`
+  - `patientPermissions`
   - `accessTokenDoctor`
   - `refreshTokenDoctor`
+  - `doctorRole`
+  - `doctorPermissions`
   - `appointmentId`
   - `slotId`
 
@@ -64,7 +70,7 @@ postman/
 ```
 
 ### 5.1 Noi dung tung collection
-- `00-auth`: register patient, login patient/doctor, refresh token, logout.
+- `00-auth`: register patient, login patient/doctor voi actor, refresh token patient/doctor, logout patient/doctor.
 - `01-user`: get profile, update profile, list doctors, doctor detail.
 - `02-doctor`: create slot, list slot, invalid overlap slot, doctor view appointments.
 - `03-appointment`: create appointment, get detail, cancel, reschedule, doctor confirm, duplicate booking conflict.
@@ -75,6 +81,16 @@ postman/
 - Login response tra token ro rang trong `data.accessToken` va `data.refreshToken`.
 - Login response tra them `data.role` va `data.permissions` de Postman nhin duoc RBAC mapping ma khong can decode JWT.
 - Refresh response tra access token moi trong `data.accessToken`; request body gui `refreshToken`.
+- Mau request login voi actor:
+
+```json
+{
+  "email": "{{patientSeedEmail}}",
+  "password": "{{patientSeedPassword}}",
+  "actor": "{{patientActor}}"
+}
+```
+
 - Mau response:
 
 ```json
@@ -102,6 +118,7 @@ const body = pm.response.json();
 pm.environment.set("accessTokenPatient", body.data.accessToken);
 pm.environment.set("refreshTokenPatient", body.data.refreshToken);
 pm.environment.set("patientRole", body.data.role);
+pm.environment.set("patientPermissions", JSON.stringify(body.data.permissions));
 ```
 
 - Khi test API can JWT, dat header:
@@ -124,6 +141,7 @@ Authorization: Bearer {{accessTokenPatient}}
 const body = pm.response.json();
 pm.environment.set("accessTokenPatient", body.data.accessToken);
 pm.environment.set("patientRole", body.data.role);
+pm.environment.set("patientPermissions", JSON.stringify(body.data.permissions));
 ```
 
 - Mau request logout:
@@ -141,6 +159,8 @@ pm.environment.set("patientRole", body.data.role);
 - Dang ky that bai voi email trung.
 - User `PATIENT` vua dang ky local co the dang nhap ngay ma khong can verify email.
 - Dang nhap thanh cong tra ve access token va refresh token.
+- Dang nhap thanh cong cho `PATIENT` va `DOCTOR` khi body gui dung `actor`.
+- Credentials dung nhung gui sai `actor` bi tra `UNAUTHORIZED`.
 - Refresh token hop le sinh access token moi.
 - Request khong co JWT bi tra `UNAUTHORIZED`.
 - Patient goi endpoint doctor-only bi tra `INSUFFICIENT_PERMISSIONS`.

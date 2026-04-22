@@ -44,6 +44,10 @@ public class ValidatingLoginUseCase implements LoginUseCase {
             throw new ApiException(ErrorCode.UNAUTHORIZED, "Invalid email or password");
         }
 
+        if (command.expectedRole() != null && userCredential.role() != command.expectedRole()) {
+            throw new ApiException(ErrorCode.UNAUTHORIZED, "Invalid email, password, or actor");
+        }
+
         IssuedTokenPair issuedTokenPair = loginTokenIssuer.issue(userCredential);
         refreshTokenWriter.save(new RefreshTokenRecord(
                 userCredential.userId(),

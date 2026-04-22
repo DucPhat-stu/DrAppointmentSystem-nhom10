@@ -125,6 +125,7 @@ main/
 - `auth-service` la nguon goc phat hanh JWT va quan ly refresh token.
 - MVP local cho phep self-register tao ngay user `PATIENT` o trang thai `ACTIVE`.
 - Cac use case bi loai khoi scope runtime MVP cua `auth-service`: OTP/email verification, login bang phone OTP, doctor-code login, 2FA, SMS/email integration, force-logout blacklist.
+- Request `POST /auth/login` co the gui them `actor = PATIENT | DOCTOR` de UI/portal rang buoc dung actor dang dang nhap; bo trong `actor` de giu tuong thich nguoc.
 - `ADMIN` va `SUPER_ADMIN` chi duoc giu o muc reserved contract, khong phai flow thuc thi trong local MVP.
 - Endpoint noi bo giua service phai co timeout va log `requestId`.
 
@@ -132,7 +133,7 @@ main/
 
 | Service | Trach nhiem chinh | REST chinh | Event xu ly |
 | --- | --- | --- | --- |
-| `auth-service` | Dang ky benh nhan, dang nhap patient/doctor, refresh token, logout, JWT role mapping toi thieu | `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout` | Khong publish event trong MVP |
+| `auth-service` | Dang ky benh nhan, dang nhap patient/doctor theo actor neu can, refresh token, logout, JWT role mapping toi thieu | `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout` | Khong publish event trong MVP |
 | `user-service` | Ho so nguoi dung, danh sach bac si, chi tiet bac si | `/users/me`, `/users/me/profile`, `/doctors`, `/doctors/{id}` | Khong publish event trong MVP |
 | `doctor-service` | Quan ly lich lam viec, slot trong, block slot | `/doctors/{id}/timeslots`, `/doctors/me/timeslots` | Co the phat event bo sung o phase sau |
 | `appointment-service` | Tao, doi, huy, xem chi tiet lich hen | `/appointments`, `/appointments/{id}`, `/appointments/{id}/cancel`, `/appointments/{id}/reschedule`, `/appointments/{id}/confirm` | Publish `appointment.created`, `appointment.confirmed`, `appointment.cancelled`, `appointment.reminder.due` |

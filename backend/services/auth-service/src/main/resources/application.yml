@@ -1,5 +1,5 @@
 server:
-  port: ${APP_PORT:8081}
+  port: ${APP_PORT:8086}
 
 spring:
   application:
@@ -15,7 +15,7 @@ spring:
   flyway:
     enabled: true
   rabbitmq:
-    addresses: ${RABBITMQ_URL:amqp://healthcare:healthcare@localhost:5672}
+    addresses: ${RABBITMQ_URL:amqp://healthcare:healthcare@localhost:5673}
 
 management:
   endpoints:
@@ -40,4 +40,3 @@ security:
     secret: ${JWT_SECRET:change-this-before-shared-environments}
     access-token-expires-in-seconds: ${JWT_ACCESS_TOKEN_EXPIRES_IN_SECONDS:900}
     refresh-token-expires-in-seconds: ${JWT_REFRESH_TOKEN_EXPIRES_IN_SECONDS:604800}
-

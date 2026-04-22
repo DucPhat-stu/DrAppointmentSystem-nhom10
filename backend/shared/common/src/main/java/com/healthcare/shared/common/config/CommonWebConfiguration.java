@@ -29,9 +29,8 @@ public class CommonWebConfiguration {
         return new ApiResponseFactory(requestMetadataProvider);
     }
 
-    @Bean
-    RequestContextFilter requestContextFilter(RequestMetadataContext requestMetadataContext) {
+    @Bean(name = "requestMetadataFilter")
+    RequestContextFilter requestMetadataFilter(RequestMetadataContext requestMetadataContext) {
         return new RequestContextFilter(requestMetadataContext);
     }
 }
-

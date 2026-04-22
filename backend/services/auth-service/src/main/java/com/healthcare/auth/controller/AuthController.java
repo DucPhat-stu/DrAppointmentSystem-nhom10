@@ -70,7 +70,11 @@ public class AuthController {
 
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        LoginResult result = loginUseCase.login(new LoginCommand(request.email(), request.password()));
+        LoginResult result = loginUseCase.login(new LoginCommand(
+                request.email(),
+                request.password(),
+                request.actor() != null ? request.actor().toRole() : null
+        ));
         LoginResponse response = new LoginResponse(
                 result.accessToken(),
                 result.refreshToken(),

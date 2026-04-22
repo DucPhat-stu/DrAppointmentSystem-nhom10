@@ -3,7 +3,7 @@
     "_postman_id": "4e2c71aa-13d8-4f9a-9e0d-6ea6f41b9c50",
     "name": "00-auth",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Core auth flow for local MVP: register PATIENT, login, refresh, logout. OTP/2FA flows are intentionally excluded."
+    "description": "Core auth flow for local MVP: register PATIENT, login PATIENT/DOCTOR with explicit actor, refresh, logout. OTP/2FA and admin runtime flows are intentionally excluded."
   },
   "item": [
     {
@@ -22,7 +22,8 @@
               "    pm.expect(body.success).to.eql(true);",
               "    pm.expect(body.data.role).to.eql('PATIENT');",
               "});",
-              "pm.environment.set('registeredPatientEmail', body.data.email);"
+              "pm.environment.set('registeredPatientEmail', body.data.email);",
+              "pm.environment.set('registeredPatientRole', body.data.role);"
             ]
           }
         }
@@ -45,21 +46,23 @@
           }
         },
         "url": {
-          "raw": "{{baseUrlAuth}}/auth/register",
+          "raw": "{{baseUrlAuth}}/api/v1/auth/register",
           "host": [
             "{{baseUrlAuth}}"
           ],
           "path": [
+            "api",
+            "v1",
             "auth",
             "register"
           ]
         },
-        "description": "Self-register a patient account. The MVP contract does not accept role switching at registration."
+        "description": "Self-register a patient account. The MVP contract does not allow switching role at registration."
       },
       "response": []
     },
     {
-      "name": "Login Seed Patient",
+      "name": "Login Seed Patient Actor",
       "event": [
         {
           "listen": "test",
@@ -70,12 +73,16 @@
               "    pm.response.to.have.status(200);",
               "});",
               "const body = pm.response.json();",
-              "pm.test('Patient login success envelope', function () {",
+              "pm.test('Patient actor login success envelope', function () {",
               "    pm.expect(body.success).to.eql(true);",
               "    pm.expect(body.data.role).to.eql('PATIENT');",
+              "    pm.expect(body.data.permissions).to.include('AUTH_REFRESH');",
+              "    pm.expect(body.data.permissions).to.include('APPOINTMENT_BOOK');",
               "});",
               "pm.environment.set('accessTokenPatient', body.data.accessToken);",
-              "pm.environment.set('refreshTokenPatient', body.data.refreshToken);"
+              "pm.environment.set('refreshTokenPatient', body.data.refreshToken);",
+              "pm.environment.set('patientRole', body.data.role);",
+              "pm.environment.set('patientPermissions', JSON.stringify(body.data.permissions));"
             ]
           }
         }
@@ -90,7 +97,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"email\": \"{{patientSeedEmail}}\",\n  \"password\": \"{{patientSeedPassword}}\"\n}",
+          "raw": "{\n  \"email\": \"{{patientSeedEmail}}\",\n  \"password\": \"{{patientSeedPassword}}\",\n  \"actor\": \"{{patientActor}}\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -98,67 +105,18 @@
           }
         },
         "url": {
-          "raw": "{{baseUrlAuth}}/auth/login",
+          "raw": "{{baseUrlAuth}}/api/v1/auth/login",
           "host": [
             "{{baseUrlAuth}}"
           ],
           "path": [
+            "api",
+            "v1",
             "auth",
             "login"
           ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Login Seed Doctor",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Status is 200', function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "const body = pm.response.json();",
-              "pm.test('Doctor login success envelope', function () {",
-              "    pm.expect(body.success).to.eql(true);",
-              "    pm.expect(body.data.role).to.eql('DOCTOR');",
-              "});",
-              "pm.environment.set('accessTokenDoctor', body.data.accessToken);",
-              "pm.environment.set('refreshTokenDoctor', body.data.refreshToken);"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"{{doctorSeedEmail}}\",\n  \"password\": \"{{doctorSeedPassword}}\"\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
         },
-        "url": {
-          "raw": "{{baseUrlAuth}}/auth/login",
-          "host": [
-            "{{baseUrlAuth}}"
-          ],
-          "path": [
-            "auth",
-            "login"
-          ]
-        }
+        "description": "Login with the seeded patient account and assert patient RBAC mapping."
       },
       "response": []
     },
@@ -174,11 +132,14 @@
               "    pm.response.to.have.status(200);",
               "});",
               "const body = pm.response.json();",
-              "pm.test('Refresh success envelope', function () {",
+              "pm.test('Patient refresh success envelope', function () {",
               "    pm.expect(body.success).to.eql(true);",
               "    pm.expect(body.data.role).to.eql('PATIENT');",
+              "    pm.expect(body.data.permissions).to.include('AUTH_REFRESH');",
               "});",
-              "pm.environment.set('accessTokenPatient', body.data.accessToken);"
+              "pm.environment.set('accessTokenPatient', body.data.accessToken);",
+              "pm.environment.set('patientRole', body.data.role);",
+              "pm.environment.set('patientPermissions', JSON.stringify(body.data.permissions));"
             ]
           }
         }
@@ -201,11 +162,13 @@
           }
         },
         "url": {
-          "raw": "{{baseUrlAuth}}/auth/refresh",
+          "raw": "{{baseUrlAuth}}/api/v1/auth/refresh",
           "host": [
             "{{baseUrlAuth}}"
           ],
           "path": [
+            "api",
+            "v1",
             "auth",
             "refresh"
           ]
@@ -229,7 +192,9 @@
               "    pm.expect(body.success).to.eql(true);",
               "});",
               "pm.environment.unset('accessTokenPatient');",
-              "pm.environment.unset('refreshTokenPatient');"
+              "pm.environment.unset('refreshTokenPatient');",
+              "pm.environment.unset('patientRole');",
+              "pm.environment.unset('patientPermissions');"
             ]
           }
         }
@@ -252,11 +217,183 @@
           }
         },
         "url": {
-          "raw": "{{baseUrlAuth}}/auth/logout",
+          "raw": "{{baseUrlAuth}}/api/v1/auth/logout",
           "host": [
             "{{baseUrlAuth}}"
           ],
           "path": [
+            "api",
+            "v1",
+            "auth",
+            "logout"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Login Seed Doctor Actor",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "const body = pm.response.json();",
+              "pm.test('Doctor actor login success envelope', function () {",
+              "    pm.expect(body.success).to.eql(true);",
+              "    pm.expect(body.data.role).to.eql('DOCTOR');",
+              "    pm.expect(body.data.permissions).to.include('DOCTOR_TIMESLOT_WRITE');",
+              "    pm.expect(body.data.permissions).to.include('APPOINTMENT_CONFIRM');",
+              "});",
+              "pm.environment.set('accessTokenDoctor', body.data.accessToken);",
+              "pm.environment.set('refreshTokenDoctor', body.data.refreshToken);",
+              "pm.environment.set('doctorRole', body.data.role);",
+              "pm.environment.set('doctorPermissions', JSON.stringify(body.data.permissions));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{doctorSeedEmail}}\",\n  \"password\": \"{{doctorSeedPassword}}\",\n  \"actor\": \"{{doctorActor}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrlAuth}}/api/v1/auth/login",
+          "host": [
+            "{{baseUrlAuth}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        },
+        "description": "Login with the seeded doctor account and assert doctor RBAC mapping."
+      },
+      "response": []
+    },
+    {
+      "name": "Refresh Doctor Access Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "const body = pm.response.json();",
+              "pm.test('Doctor refresh success envelope', function () {",
+              "    pm.expect(body.success).to.eql(true);",
+              "    pm.expect(body.data.role).to.eql('DOCTOR');",
+              "    pm.expect(body.data.permissions).to.include('DOCTOR_TIMESLOT_WRITE');",
+              "});",
+              "pm.environment.set('accessTokenDoctor', body.data.accessToken);",
+              "pm.environment.set('doctorRole', body.data.role);",
+              "pm.environment.set('doctorPermissions', JSON.stringify(body.data.permissions));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{refreshTokenDoctor}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrlAuth}}/api/v1/auth/refresh",
+          "host": [
+            "{{baseUrlAuth}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "refresh"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Logout Doctor",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "const body = pm.response.json();",
+              "pm.test('Logout success envelope', function () {",
+              "    pm.expect(body.success).to.eql(true);",
+              "});",
+              "pm.environment.unset('accessTokenDoctor');",
+              "pm.environment.unset('refreshTokenDoctor');",
+              "pm.environment.unset('doctorRole');",
+              "pm.environment.unset('doctorPermissions');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{refreshTokenDoctor}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrlAuth}}/api/v1/auth/logout",
+          "host": [
+            "{{baseUrlAuth}}"
+          ],
+          "path": [
+            "api",
+            "v1",
             "auth",
             "logout"
           ]

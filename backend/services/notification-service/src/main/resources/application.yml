@@ -15,7 +15,7 @@ spring:
   flyway:
     enabled: true
   rabbitmq:
-    addresses: ${RABBITMQ_URL:amqp://healthcare:healthcare@localhost:5672}
+    addresses: ${RABBITMQ_URL:amqp://healthcare:healthcare@localhost:5673}
 
 management:
   endpoints:
@@ -38,4 +38,3 @@ app:
 security:
   jwt:
     secret: ${JWT_SECRET:change-this-before-shared-environments}
-
