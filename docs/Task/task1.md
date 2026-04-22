@@ -17,7 +17,6 @@
 [BE] API POST /api/v1/auth/register
 [BE] Validate email unique
 [BE] Hash password (BCrypt)
-[BE] Send OTP/email verification
 
 [FE] Form register
 [FE] Validate input

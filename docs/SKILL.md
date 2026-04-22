@@ -72,7 +72,8 @@ main/
 
 ### 5.2 Chuan module Spring Boot
 - Moi service la mot Maven module doc lap, co `spring-boot-starter-parent` duoc ke thua tu parent `backend/pom.xml`.
-- Package ben trong moi service dung mau `controller`, `application`, `domain`, `infrastructure`, `config`.
+- Package ben trong moi service uu tien tach ro `config`, `controller`, `dto/request`, `dto/response`, `entity`, `exception`, `repository`, `security`, `service`.
+- Ben trong `service` duoc phep tach tiep theo use case nhu `login`, `register`, `token`; tranh nhoi mot package `application` qua to.
 - DTO request/response dung Java `record`; mapping uu tien viet tay de MVP ro rang, khong them mapper library.
 - Validation dung `jakarta.validation` tai request layer; khong de business rule phuc tap nam trong controller.
 - Migration dung Flyway, luu tai `src/main/resources/db/migration`.
@@ -122,14 +123,16 @@ main/
 - Access token het han sau 15 phut; refresh token het han sau 7 ngay.
 - Password hash dung BCrypt.
 - `auth-service` la nguon goc phat hanh JWT va quan ly refresh token.
-- `ADMIN` va `SUPER_ADMIN` khong nam trong pham vi UI MVP, nhung van giu role trong contract.
+- MVP local cho phep self-register tao ngay user `PATIENT` o trang thai `ACTIVE`.
+- Cac use case bi loai khoi scope runtime MVP cua `auth-service`: OTP/email verification, login bang phone OTP, doctor-code login, 2FA, SMS/email integration, force-logout blacklist.
+- `ADMIN` va `SUPER_ADMIN` chi duoc giu o muc reserved contract, khong phai flow thuc thi trong local MVP.
 - Endpoint noi bo giua service phai co timeout va log `requestId`.
 
 ### 5.5 Trach nhiem tung service MVP
 
 | Service | Trach nhiem chinh | REST chinh | Event xu ly |
 | --- | --- | --- | --- |
-| `auth-service` | Dang ky, dang nhap, refresh token, RBAC | `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout` | Khong publish event trong MVP |
+| `auth-service` | Dang ky benh nhan, dang nhap patient/doctor, refresh token, logout, JWT role mapping toi thieu | `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout` | Khong publish event trong MVP |
 | `user-service` | Ho so nguoi dung, danh sach bac si, chi tiet bac si | `/users/me`, `/users/me/profile`, `/doctors`, `/doctors/{id}` | Khong publish event trong MVP |
 | `doctor-service` | Quan ly lich lam viec, slot trong, block slot | `/doctors/{id}/timeslots`, `/doctors/me/timeslots` | Co the phat event bo sung o phase sau |
 | `appointment-service` | Tao, doi, huy, xem chi tiet lich hen | `/appointments`, `/appointments/{id}`, `/appointments/{id}/cancel`, `/appointments/{id}/reschedule`, `/appointments/{id}/confirm` | Publish `appointment.created`, `appointment.confirmed`, `appointment.cancelled`, `appointment.reminder.due` |

@@ -32,10 +32,10 @@
 - Ghi lai guardrail SOLID va refactor backlog trong `SOLID_GUIDELINES.md`.
 
 ### Phase 1
-- Implement `auth-service` voi register, login, refresh, logout, JWT issue.
+- Implement `auth-service` voi register patient, login patient/doctor, refresh, logout, JWT issue.
 - Implement `user-service` voi profile benh nhan, doctor directory, doctor detail.
 - Tao collection Postman cho auth va user.
-- Cap nhat seed data local cho patient, doctor, admin.
+- Cap nhat seed data local cho patient va doctor.
 
 ### Phase 2
 - Implement `doctor-service` voi tao/sua/block slot, liet ke slot trong.

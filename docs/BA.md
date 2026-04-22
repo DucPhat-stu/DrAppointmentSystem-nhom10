@@ -67,6 +67,9 @@
 
 ## 7. Business rules can khoa
 - `email` la duy nhat trong he thong.
+- Self-register trong MVP local chi tao duoc user role `PATIENT` va kich hoat ngay o trang thai `ACTIVE`.
+- `auth-service` MVP chi giu 4 use case thuc thi: `register`, `login`, `refresh`, `logout`.
+- Cac flow `verify-email`, OTP qua phone, `doctor_code`, 2FA, SMS/email verification va admin auth flow duoc dua ra khoi pham vi runtime local.
 - Chi user co `status = ACTIVE` moi dang nhap duoc.
 - Chi bac si duoc tao va quan ly `TimeSlot` cua chinh minh.
 - Slot khong duoc trung gio voi slot khac cua cung bac si.
@@ -96,6 +99,8 @@
 
 ### 9.1 Auth
 - Dang ky tao duoc user moi voi role `PATIENT`.
+- User vua dang ky co the dang nhap ngay trong local MVP ma khong can buoc verify email.
+- Dang nhap su dung email/password cho `PATIENT` va `DOCTOR`; khong mo them luong OTP/2FA o MVP.
 - Dang nhap tra ve access token va refresh token hop le.
 - Request khong co token hoac token sai bi tra `UNAUTHORIZED`.
 - User dang nhap role `PATIENT` khong duoc goi endpoint chi danh cho `DOCTOR`.

@@ -19,11 +19,16 @@
 - Cac service MVP chay bang Maven de debug nhanh.
 - Frontend chay bang Vite va goi API Gateway/local proxy.
 - Moi truong Postman can co bien:
-  - `baseUrlGateway`
-  - `patientEmail`
-  - `patientPassword`
-  - `doctorEmail`
-  - `doctorPassword`
+  - `baseUrlAuth`
+  - `registerName`
+  - `registerEmail`
+  - `registerPhone`
+  - `registerPassword`
+  - `patientSeedEmail`
+  - `patientSeedPassword`
+  - `doctorSeedEmail`
+  - `doctorSeedPassword`
+  - `registeredPatientEmail`
   - `accessTokenPatient`
   - `refreshTokenPatient`
   - `accessTokenDoctor`
@@ -37,11 +42,11 @@
 | --- | --- |
 | Patient | `patient01@healthcare.local / Patient@123` |
 | Doctor | `doctor01@healthcare.local / Doctor@123` |
-| Admin | `admin01@healthcare.local / Admin@123` |
 | Doctor profile | Chuyen khoa Noi tong quat, 5 nam kinh nghiem |
 | TimeSlot | It nhat 3 slot `AVAILABLE` trong 2 ngay toi |
 
 - Seed data chi dung cho local/test; khong dua vao tai lieu van hanh production.
+- Local auth seed hien tai duoc cap qua Flyway migration `V3__seed_mvp_users.sql`.
 
 ## 5. Cau truc Postman de xuat
 
@@ -59,7 +64,7 @@ postman/
 ```
 
 ### 5.1 Noi dung tung collection
-- `00-auth`: register, login, refresh token, logout, negative token cases.
+- `00-auth`: register patient, login patient/doctor, refresh token, logout.
 - `01-user`: get profile, update profile, list doctors, doctor detail.
 - `02-doctor`: create slot, list slot, invalid overlap slot, doctor view appointments.
 - `03-appointment`: create appointment, get detail, cancel, reschedule, doctor confirm, duplicate booking conflict.
@@ -134,10 +139,12 @@ pm.environment.set("patientRole", body.data.role);
 ### 6.1 Auth va security
 - Dang ky thanh cong voi email moi.
 - Dang ky that bai voi email trung.
+- User `PATIENT` vua dang ky local co the dang nhap ngay ma khong can verify email.
 - Dang nhap thanh cong tra ve access token va refresh token.
 - Refresh token hop le sinh access token moi.
 - Request khong co JWT bi tra `UNAUTHORIZED`.
 - Patient goi endpoint doctor-only bi tra `INSUFFICIENT_PERMISSIONS`.
+- OTP/email verification va 2FA khong nam trong regression auth cua MVP local.
 
 ### 6.2 User va doctor directory
 - Xem profile cua minh thanh cong.
