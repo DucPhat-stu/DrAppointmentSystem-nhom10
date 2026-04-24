@@ -1,0 +1,108 @@
+/* =========================================================
+   ProfileSection – Card wrapper (editable / readonly)
+   ========================================================= */
+
+.section {
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-glass);
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  overflow: hidden;
+  transition: border-color var(--transition-base),
+              box-shadow var(--transition-base);
+}
+
+.section:hover {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Editable variant – accent blue border glow on hover */
+.editable:hover {
+  border-color: rgba(59, 130, 246, 0.2);
+  box-shadow: 0 4px 30px rgba(59, 130, 246, 0.06);
+}
+
+/* Readonly variant – neutral */
+.readonly {
+  opacity: 0.95;
+}
+
+/* ---------- Header ---------- */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+}
+
+.readonly .icon {
+  background: rgba(100, 116, 139, 0.1);
+  color: var(--color-text-muted);
+}
+
+.title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+/* ---------- Badge ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.02em;
+}
+
+.badge_editable {
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+}
+
+.badge_readonly {
+  background: rgba(100, 116, 139, 0.1);
+  color: var(--color-text-muted);
+  border: 1px solid rgba(100, 116, 139, 0.15);
+}
+
+/* ---------- Body ---------- */
+.body {
+  padding: var(--space-6);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .body {
+    padding: var(--space-4);
+  }
+}
