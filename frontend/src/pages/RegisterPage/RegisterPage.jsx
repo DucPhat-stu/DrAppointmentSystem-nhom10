@@ -6,6 +6,8 @@ import SelectField from '../../components/forms/SelectField.jsx';
 import Button from '../../components/forms/Button.jsx';
 import Divider from '../../components/forms/Divider.jsx';
 import SocialButton from '../../components/forms/SocialButton.jsx';
+import { useAuth } from '../../hooks/useAuth.js';
+import { ApiError } from '../../services/httpClient.js';
 import styles from './RegisterPage.module.css';
 
 const COUNTRY_OPTIONS = [
@@ -54,6 +56,12 @@ function validate(form) {
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const { registerAction, isAuthenticated } = useAuth();
+
+  // Redirect if already logged in
+  if (isAuthenticated) {
+    navigate('/doctors', { replace: true });
+  }
 
   const [form, setForm] = useState({
     firstName: '',
@@ -69,7 +77,6 @@ export default function RegisterPage() {
 
   const handleChange = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
-    // Clear field error on change
     if (errors[field]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -94,14 +101,27 @@ export default function RegisterPage() {
     setSubmitError('');
 
     try {
-      // TODO: Replace with real API call
-      // await authService.register({ ...form });
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await registerAction({
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        password: form.password,
+      });
 
       // Navigate to login after successful registration
       navigate('/login', { state: { registered: true } });
     } catch (err) {
-      setSubmitError(err.message || 'Registration failed. Please try again.');
+      if (err instanceof ApiError) {
+        if (err.errorCode === 'CONFLICT' || err.status === 409) {
+          setSubmitError('An account with this email already exists.');
+        } else if (err.errorCode === 'VALIDATION_ERROR') {
+          setSubmitError(err.message || 'Please check your input.');
+        } else {
+          setSubmitError(err.message || 'Registration failed. Please try again.');
+        }
+      } else {
+        setSubmitError('Unable to connect to server. Please try again later.');
+      }
     } finally {
       setLoading(false);
     }

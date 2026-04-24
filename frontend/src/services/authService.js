@@ -1,16 +1,65 @@
-import { httpClient } from './httpClient.js';
+/* =========================================================
+   Auth Service – API calls to auth-service (port 8086)
+   Endpoints: register, login, refresh, logout
+   ========================================================= */
 
-export function login(payload) {
-  return httpClient('/auth/login', {
+import { authApi } from './httpClient.js';
+
+/**
+ * Register a new patient account.
+ * POST /api/v1/auth/register
+ */
+export async function register({ firstName, lastName, email, password }) {
+  const response = await authApi('/api/v1/auth/register', {
     method: 'POST',
-    body: JSON.stringify(payload),
+    skipAuth: true,
+    body: JSON.stringify({
+      fullName: `${firstName} ${lastName}`.trim(),
+      email,
+      password,
+    }),
   });
+  return response;
 }
 
-export function refreshToken(payload) {
-  return httpClient('/auth/refresh', {
+/**
+ * Login with email/password.
+ * POST /api/v1/auth/login
+ * @param {object} payload - { email, password, actor? }
+ * @returns {{ data: { accessToken, refreshToken, email, role } }}
+ */
+export async function login({ email, password, actor = 'PATIENT' }) {
+  const response = await authApi('/api/v1/auth/login', {
     method: 'POST',
-    body: JSON.stringify(payload),
+    skipAuth: true,
+    body: JSON.stringify({ email, password, actor }),
   });
+  return response;
 }
 
+/**
+ * Refresh access token.
+ * POST /api/v1/auth/refresh
+ * @param {string} refreshToken
+ */
+export async function refreshToken(refreshTokenValue) {
+  const response = await authApi('/api/v1/auth/refresh', {
+    method: 'POST',
+    skipAuth: true,
+    body: JSON.stringify({ refreshToken: refreshTokenValue }),
+  });
+  return response;
+}
+
+/**
+ * Logout – revoke refresh token.
+ * POST /api/v1/auth/logout
+ * @param {string} refreshToken
+ */
+export async function logout(refreshTokenValue) {
+  const response = await authApi('/api/v1/auth/logout', {
+    method: 'POST',
+    body: JSON.stringify({ refreshToken: refreshTokenValue }),
+  });
+  return response;
+}

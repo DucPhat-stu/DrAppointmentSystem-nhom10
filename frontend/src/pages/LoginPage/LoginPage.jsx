@@ -7,6 +7,7 @@ import Checkbox from '../../components/forms/Checkbox.jsx';
 import Divider from '../../components/forms/Divider.jsx';
 import SocialButton from '../../components/forms/SocialButton.jsx';
 import { useAuth } from '../../hooks/useAuth.js';
+import { ApiError } from '../../services/httpClient.js';
 import styles from './LoginPage.module.css';
 
 function validate(form) {
@@ -27,7 +28,12 @@ function validate(form) {
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setSession } = useAuth();
+  const { loginAction, isAuthenticated } = useAuth();
+
+  // Redirect if already logged in
+  if (isAuthenticated) {
+    navigate('/doctors', { replace: true });
+  }
 
   const justRegistered = location.state?.registered;
 
@@ -66,24 +72,25 @@ export default function LoginPage() {
     setSubmitError('');
 
     try {
-      // TODO: Replace with real API call
-      // const response = await authService.login({
-      //   email: form.email,
-      //   password: form.password,
-      //   actor: 'PATIENT',
-      // });
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-
-      // Mock session for MVP – will connect to real auth-service API
-      setSession({
+      await loginAction({
         email: form.email,
-        role: 'PATIENT',
-        accessToken: 'mock-jwt-token',
+        password: form.password,
+        actor: 'PATIENT',
       });
 
       navigate('/doctors');
     } catch (err) {
-      setSubmitError(err.message || 'Invalid email or password. Please try again.');
+      if (err instanceof ApiError) {
+        if (err.errorCode === 'UNAUTHORIZED' || err.status === 401) {
+          setSubmitError('Invalid email or password. Please try again.');
+        } else if (err.errorCode === 'VALIDATION_ERROR') {
+          setSubmitError(err.message || 'Please check your input.');
+        } else {
+          setSubmitError(err.message || 'Login failed. Please try again.');
+        }
+      } else {
+        setSubmitError('Unable to connect to server. Please try again later.');
+      }
     } finally {
       setLoading(false);
     }
