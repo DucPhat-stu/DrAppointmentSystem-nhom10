@@ -1,40 +1,48 @@
 /* =========================================================
-   AppShell – Main Layout (after auth)
-   Updated for dark theme
+   AppShell – Sidebar Navigation Layout
+   Updated for dark theme with sidebar
    ========================================================= */
 
 .shell {
+  display: flex;
   min-height: 100vh;
   background: var(--color-bg-base);
   color: var(--color-text-primary);
 }
 
-.header {
+/* ---------- Sidebar ---------- */
+.sidebar {
   position: sticky;
   top: 0;
-  z-index: var(--z-sticky);
+  height: 100vh;
+  width: 240px;
+  flex-shrink: 0;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-4) var(--space-6);
-  height: var(--header-height);
-  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-5);
+  border-right: 1px solid var(--color-border);
   background: var(--color-bg-glass-strong);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  transition: background var(--transition-fast);
+  overflow-y: auto;
+  z-index: var(--z-sticky);
 }
 
+.sidebarTop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* ---------- Brand ---------- */
 .brand {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  color: var(--color-text-primary);
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
   text-decoration: none;
-  letter-spacing: var(--letter-spacing-tight);
+  color: var(--color-text-primary);
+  padding: var(--space-2) 0;
 }
 
 .brandIcon {
@@ -46,49 +54,135 @@
   border-radius: var(--radius-sm);
   background: var(--color-accent-gradient);
   color: #fff;
+  flex-shrink: 0;
 }
 
+.brandText {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+/* ---------- Navigation ---------- */
 .nav {
   display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.link,
-.activeLink {
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-pill);
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
   text-decoration: none;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   color: var(--color-text-secondary);
   transition:
     background var(--transition-fast),
-    color var(--transition-fast);
+    color var(--transition-fast),
+    transform var(--transition-fast);
 }
 
-.link:hover {
+.navLink:hover {
   background: rgba(255, 255, 255, 0.06);
   color: var(--color-text-primary);
 }
 
-.activeLink {
-  background: var(--color-accent);
-  color: #fff;
-  box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
+.active {
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+  font-weight: var(--font-weight-semibold);
 }
 
+.active .navIcon {
+  color: var(--color-accent);
+}
+
+.navIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  transition: color var(--transition-fast);
+}
+
+.navLabel {
+  white-space: nowrap;
+}
+
+/* ---------- Sidebar Bottom ---------- */
+.sidebarBottom {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+/* User Card */
+.userCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-gradient);
+  color: #fff;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  flex-shrink: 0;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.userName {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userRole {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: capitalize;
+}
+
+/* Logout */
 .logoutButton {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  border-radius: var(--radius-pill);
-  padding: var(--space-2) var(--space-4);
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.12);
   color: #ef4444;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
+  font-family: inherit;
   cursor: pointer;
   transition:
     background var(--transition-fast),
@@ -96,26 +190,76 @@
 }
 
 .logoutButton:hover {
-  background: rgba(239, 68, 68, 0.18);
-  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.25);
 }
 
+/* ---------- Main Content ---------- */
 .main {
-  padding: var(--space-6);
+  flex: 1;
+  padding: var(--space-6) var(--space-8);
   max-width: var(--max-width-content);
-  margin: 0 auto;
+  overflow-x: hidden;
 }
 
+/* ---------- Responsive ---------- */
 @media (max-width: 768px) {
-  .header {
+  .shell {
     flex-direction: column;
-    align-items: flex-start;
+  }
+
+  .sidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    width: 100%;
     height: auto;
-    padding: var(--space-4);
-    gap: var(--space-3);
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2) var(--space-4);
+    border-right: none;
+    border-top: 1px solid var(--color-border);
+    z-index: var(--z-sticky);
+  }
+
+  .sidebarTop {
+    flex-direction: row;
+    gap: 0;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .brand,
+  .sidebarBottom,
+  .navLabel {
+    display: none;
+  }
+
+  .nav {
+    flex-direction: row;
+    gap: var(--space-2);
+    width: 100%;
+    justify-content: space-around;
+  }
+
+  .navLink {
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-2) var(--space-3);
+    font-size: 10px;
+  }
+
+  .navIcon {
+    width: 24px;
+    height: 24px;
   }
 
   .main {
     padding: var(--space-4);
+    padding-bottom: 80px; /* space for bottom nav */
   }
 }
