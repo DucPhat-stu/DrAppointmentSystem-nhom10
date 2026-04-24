@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import AppShell from '../components/layout/AppShell.jsx';
 import { useAuth } from '../hooks/useAuth.js';
+import HomePage from '../pages/HomePage/HomePage.jsx';
 import LoginPage from '../pages/LoginPage/LoginPage.jsx';
 import RegisterPage from '../pages/RegisterPage/RegisterPage.jsx';
 import DoctorListPage from '../pages/DoctorListPage.jsx';
@@ -26,16 +27,16 @@ function ProtectedLayout() {
 
 export const router = createBrowserRouter([
   {
+    path: '/',
+    element: <HomePage />,
+  },
+  {
     path: '/login',
     element: <LoginPage />,
   },
   {
     path: '/register',
     element: <RegisterPage />,
-  },
-  {
-    path: '/',
-    element: <Navigate to="/doctors" replace />,
   },
   {
     element: <ProtectedLayout />,

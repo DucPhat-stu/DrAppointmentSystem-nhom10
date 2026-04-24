@@ -10,12 +10,12 @@ const navItems = [
 ];
 
 export default function AppShell({ children }) {
-  const { session, setSession } = useAuth();
+  const { session, logoutAction } = useAuth();
 
   return (
     <div className={styles.shell}>
       <header className={styles.header}>
-        <Link className={styles.brand} to="/doctors">
+        <Link className={styles.brand} to="/">
           <span className={styles.brandIcon}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
@@ -34,7 +34,7 @@ export default function AppShell({ children }) {
             </NavLink>
           ))}
         </nav>
-        <button className={styles.logoutButton} onClick={() => setSession(null)} type="button">
+        <button className={styles.logoutButton} onClick={logoutAction} type="button">
           Logout
         </button>
       </header>
