@@ -1,0 +1,133 @@
+/* =========================================================
+   BrandingPanel – Left side of Auth Layout
+   ========================================================= */
+
+.panel {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-12) var(--space-10);
+  overflow: hidden;
+}
+
+/* ---------- Gradient Background ---------- */
+.gradientOverlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(59, 130, 246, 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
+    linear-gradient(160deg, #0c1322 0%, #0a0e17 50%, #0d1420 100%);
+  z-index: 0;
+}
+
+/* ---------- Content ---------- */
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  max-width: 460px;
+}
+
+/* ---------- Logo ---------- */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.logoIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-gradient);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.logoText {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+/* ---------- Tagline ---------- */
+.tagline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.taglineTitle {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+  color: var(--color-text-primary);
+}
+
+.highlight {
+  background: var(--color-accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.taglineSubtitle {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-secondary);
+  max-width: 380px;
+}
+
+/* ---------- Illustration ---------- */
+.illustrationWrapper {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-4) 0;
+}
+
+.illustration {
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+  border-radius: var(--radius-xl);
+  animation: float 6s ease-in-out infinite;
+  filter: drop-shadow(0 8px 30px rgba(59, 130, 246, 0.15));
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-12px); }
+}
+
+/* ---------- Feature Indicators ---------- */
+.features {
+  display: flex;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.featureItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.featureDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent-gradient);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+}

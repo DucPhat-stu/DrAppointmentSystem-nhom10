@@ -1,7 +1,8 @@
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import AppShell from '../components/layout/AppShell.jsx';
 import { useAuth } from '../hooks/useAuth.js';
-import LoginPage from '../pages/LoginPage.jsx';
+import LoginPage from '../pages/LoginPage/LoginPage.jsx';
+import RegisterPage from '../pages/RegisterPage/RegisterPage.jsx';
 import DoctorListPage from '../pages/DoctorListPage.jsx';
 import DoctorDetailPage from '../pages/DoctorDetailPage.jsx';
 import BookAppointmentPage from '../pages/BookAppointmentPage.jsx';
@@ -27,6 +28,10 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/register',
+    element: <RegisterPage />,
   },
   {
     path: '/',
@@ -62,4 +67,3 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
-

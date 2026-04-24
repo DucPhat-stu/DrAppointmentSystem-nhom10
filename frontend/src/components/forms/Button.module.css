@@ -1,0 +1,125 @@
+/* =========================================================
+   Button Component
+   Variants: primary | outline | ghost
+   Sizes: sm | md | lg
+   ========================================================= */
+
+.button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-6);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-wide);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+.button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ---------- Sizes ---------- */
+.sm {
+  height: 36px;
+  font-size: var(--font-size-sm);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+}
+
+.md {
+  height: 48px;
+}
+
+.lg {
+  height: 54px;
+  font-size: var(--font-size-md);
+  padding: 0 var(--space-8);
+  border-radius: var(--radius-lg);
+}
+
+/* ---------- Primary ---------- */
+.primary {
+  background: var(--color-accent-gradient);
+  background-size: 200% 200%;
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--color-accent-gradient-hover);
+  box-shadow: 0 6px 25px rgba(59, 130, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+.primary:focus-visible {
+  outline-offset: 3px;
+}
+
+/* ---------- Outline ---------- */
+.outline {
+  background: transparent;
+  color: var(--color-accent);
+  border: 1.5px solid var(--color-accent);
+}
+
+.outline:hover:not(:disabled) {
+  background: var(--color-accent-light);
+  border-color: var(--color-accent-hover);
+}
+
+/* ---------- Ghost ---------- */
+.ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: none;
+}
+
+.ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-primary);
+}
+
+/* ---------- Full Width ---------- */
+.fullWidth {
+  width: 100%;
+}
+
+/* ---------- Loading ---------- */
+.loading {
+  pointer-events: none;
+}
+
+.spinner {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.hiddenText {
+  visibility: hidden;
+}
