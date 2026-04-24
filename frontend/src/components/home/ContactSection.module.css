@@ -1,0 +1,281 @@
+/* =========================================================
+   Contact Section – CTA banner + contact info cards
+   ========================================================= */
+
+.section {
+  padding: var(--space-24) 0;
+  position: relative;
+}
+
+.container {
+  max-width: var(--max-width-content);
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+/* ---------- Header ---------- */
+.header {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto var(--space-12);
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 700ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 700ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.visible .header {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-light);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-accent);
+  margin-bottom: var(--space-4);
+}
+
+.title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+  margin-bottom: var(--space-4);
+}
+
+.highlight {
+  background: var(--color-accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-relaxed);
+}
+
+/* ---------- CTA Banner ---------- */
+.banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  padding: var(--space-10) var(--space-12);
+  border-radius: var(--radius-xl);
+  background: var(--color-accent-gradient);
+  overflow: hidden;
+
+  /* Scroll reveal */
+  opacity: 0;
+  transform: translateY(20px) scale(0.98);
+  transition: opacity 700ms cubic-bezier(0.4, 0, 0.2, 1) 200ms,
+              transform 700ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+
+  /* Pulse glow */
+  box-shadow: 0 8px 40px rgba(59, 130, 246, 0.3);
+  animation: none;
+}
+
+.visible .banner {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  animation: bannerPulse 4s ease-in-out infinite 1.5s;
+}
+
+@keyframes bannerPulse {
+  0%, 100% { box-shadow: 0 8px 40px rgba(59, 130, 246, 0.3); }
+  50% { box-shadow: 0 8px 60px rgba(59, 130, 246, 0.45); }
+}
+
+/* Decorative orbs inside banner */
+.bannerOrb1 {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  top: -80px;
+  right: -40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.bannerOrb2 {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  bottom: -60px;
+  left: -30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+}
+
+.bannerContent {
+  position: relative;
+  z-index: 1;
+}
+
+.bannerContent h3 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: #fff;
+  margin-bottom: var(--space-2);
+}
+
+.bannerContent p {
+  font-size: var(--font-size-base);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.bannerBtn {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-8);
+  border-radius: var(--radius-lg);
+  background: #fff;
+  color: var(--color-accent);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.bannerBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  color: var(--color-accent);
+}
+
+.bannerBtn:active {
+  transform: scale(0.97);
+}
+
+/* ---------- Contact Info Grid ---------- */
+.contactGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+  margin-top: var(--space-12);
+}
+
+.contactCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-glass);
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  text-decoration: none;
+  transition:
+    transform var(--transition-base),
+    border-color var(--transition-base),
+    box-shadow var(--transition-base);
+
+  /* Scroll reveal stagger */
+  opacity: 0;
+  transform: translateY(20px);
+  animation: none;
+}
+
+.visible .contactCard {
+  animation: cardSlideUp 600ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.visible .contactCard:nth-child(1) { animation-delay: 400ms; }
+.visible .contactCard:nth-child(2) { animation-delay: 500ms; }
+.visible .contactCard:nth-child(3) { animation-delay: 600ms; }
+
+@keyframes cardSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.contactCard:hover {
+  transform: translateY(-4px);
+  border-color: rgba(59, 130, 246, 0.25);
+  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.08);
+}
+
+.contactIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+  transition: background var(--transition-base),
+              color var(--transition-fast);
+}
+
+.contactCard:hover .contactIcon {
+  background: var(--color-accent-gradient);
+  color: #fff;
+}
+
+.contactCard h4 {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+
+.contactCard p {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  .section {
+    padding: var(--space-16) 0;
+  }
+
+  .title {
+    font-size: var(--font-size-xl);
+  }
+
+  .banner {
+    flex-direction: column;
+    text-align: center;
+    padding: var(--space-8) var(--space-6);
+  }
+
+  .bannerBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .contactGrid {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+}

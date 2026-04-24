@@ -1,11 +1,22 @@
 /* =========================================================
-   Footer
+   Footer – Social icons, hover effects, scroll reveal
    ========================================================= */
 
 .footer {
   position: relative;
   background: var(--color-bg-secondary);
   border-top: 1px solid var(--color-border);
+
+  /* Scroll reveal */
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 700ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 700ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .container {
@@ -54,6 +65,38 @@
   max-width: 300px;
 }
 
+/* ---------- Social Icons ---------- */
+.socials {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+}
+
+.socialLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.socialLink:hover {
+  color: #fff;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  transform: translateY(-2px);
+}
+
 /* ---------- Links Columns ---------- */
 .linksCol {
   display: flex;
@@ -84,14 +127,40 @@
 }
 
 .linkList a {
+  position: relative;
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
   text-decoration: none;
   transition: color var(--transition-fast);
 }
 
+/* Underline slide-in on hover */
+.linkList a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--color-accent);
+  transition: width var(--transition-base);
+}
+
 .linkList a:hover {
   color: var(--color-accent);
+}
+
+.linkList a:hover::after {
+  width: 100%;
+}
+
+/* Contact items (non-link items with icons) */
+.contactItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
 }
 
 /* ---------- Bottom Bar ---------- */
