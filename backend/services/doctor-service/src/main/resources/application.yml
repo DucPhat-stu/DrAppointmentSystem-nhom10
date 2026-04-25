@@ -34,6 +34,10 @@ app:
     database: doctor_db
     rabbitmq-enabled: false
     redis-enabled: false
+  clients:
+    appointment-service:
+      base-url: ${APPOINTMENT_SERVICE_URL:http://localhost:8084}
+      timeout-ms: ${APPOINTMENT_SERVICE_TIMEOUT_MS:2000}
 
 security:
   jwt:
