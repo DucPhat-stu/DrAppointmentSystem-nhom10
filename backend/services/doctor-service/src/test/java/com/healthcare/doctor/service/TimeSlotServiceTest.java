@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -100,6 +101,26 @@ class TimeSlotServiceTest {
                 .isInstanceOf(ApiException.class)
                 .extracting(exception -> ((ApiException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.CONFLICT);
+    }
+
+    @Test
+    void listReturnsSlotsForOwnedSchedule() {
+        UUID doctorId = UUID.randomUUID();
+        UUID scheduleId = UUID.randomUUID();
+        DoctorScheduleEntity schedule = schedule(scheduleId, doctorId, LocalDate.of(2026, 6, 25));
+        TimeSlotEntity slot = TimeSlotEntity.create(
+                scheduleId,
+                OffsetDateTime.parse("2026-06-25T08:00:00Z"),
+                OffsetDateTime.parse("2026-06-25T09:00:00Z"),
+                FIXED_CLOCK
+        );
+        when(scheduleRepository.findByIdAndDoctorId(scheduleId, doctorId)).thenReturn(Optional.of(schedule));
+        when(timeSlotRepository.findAllByScheduleIdOrderByStartTimeAsc(scheduleId)).thenReturn(List.of(slot));
+
+        List<TimeSlotResponse> response = service.list(doctorId, scheduleId);
+
+        assertThat(response).hasSize(1);
+        assertThat(response.getFirst().scheduleId()).isEqualTo(scheduleId);
     }
 
     private DoctorScheduleEntity schedule(UUID scheduleId, UUID doctorId, LocalDate date) {

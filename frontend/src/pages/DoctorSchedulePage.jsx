@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   createDoctorSchedule,
+  createTimeSlot,
   deleteDoctorSchedule,
+  deleteTimeSlot,
   fetchDoctorSchedules,
+  fetchScheduleTimeSlots,
   updateDoctorSchedule,
+  updateTimeSlot,
 } from '../services/doctorService.js';
 import styles from './DoctorSchedulePage.module.css';
 
@@ -27,11 +31,40 @@ function formatDisplayDate(value) {
   }).format(new Date(`${value}T00:00:00`));
 }
 
+function toDateTimeInput(date, hour) {
+  return `${date}T${String(hour).padStart(2, '0')}:00`;
+}
+
+function toApiDateTime(value) {
+  return new Date(value).toISOString();
+}
+
+function toDateTimeInputValue(value) {
+  const date = new Date(value);
+  const offsetMs = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+}
+
+function formatTimeRange(slot) {
+  const formatter = new Intl.DateTimeFormat('en', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return `${formatter.format(new Date(slot.startTime))} - ${formatter.format(new Date(slot.endTime))}`;
+}
+
 export default function DoctorSchedulePage() {
   const [schedules, setSchedules] = useState([]);
+  const [timeSlots, setTimeSlots] = useState([]);
   const [selectedDate, setSelectedDate] = useState(toInputDate(new Date()));
   const [editingId, setEditingId] = useState(null);
+  const [editingSlotId, setEditingSlotId] = useState(null);
+  const [slotForm, setSlotForm] = useState({
+    startTime: `${toInputDate(new Date())}T08:00`,
+    endTime: `${toInputDate(new Date())}T09:00`,
+  });
   const [loading, setLoading] = useState(true);
+  const [slotsLoading, setSlotsLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -49,6 +82,29 @@ export default function DoctorSchedulePage() {
     [schedules],
   );
 
+  const selectedSchedule = useMemo(
+    () => schedules.find((schedule) => schedule.date === selectedDate) ?? null,
+    [schedules, selectedDate],
+  );
+
+  async function loadTimeSlots(scheduleId) {
+    if (!scheduleId) {
+      setTimeSlots([]);
+      return;
+    }
+
+    setSlotsLoading(true);
+    setError('');
+    try {
+      const response = await fetchScheduleTimeSlots(scheduleId);
+      setTimeSlots(response.data ?? []);
+    } catch (err) {
+      setError(err.message ?? 'Unable to load time slots');
+    } finally {
+      setSlotsLoading(false);
+    }
+  }
+
   async function loadSchedules() {
     setLoading(true);
     setError('');
@@ -65,6 +121,18 @@ export default function DoctorSchedulePage() {
   useEffect(() => {
     loadSchedules();
   }, []);
+
+  useEffect(() => {
+    setSlotForm({
+      startTime: toDateTimeInput(selectedDate, 8),
+      endTime: toDateTimeInput(selectedDate, 9),
+    });
+    setEditingSlotId(null);
+  }, [selectedDate]);
+
+  useEffect(() => {
+    loadTimeSlots(selectedSchedule?.id);
+  }, [selectedSchedule?.id]);
 
   function startEdit(schedule) {
     setEditingId(schedule.id);
@@ -109,6 +177,71 @@ export default function DoctorSchedulePage() {
       }
     } catch (err) {
       setError(err.message ?? 'Unable to delete schedule');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function startSlotEdit(slot) {
+    if (slot.status === 'BOOKED') {
+      return;
+    }
+    setEditingSlotId(slot.id);
+    setSlotForm({
+      startTime: toDateTimeInputValue(slot.startTime),
+      endTime: toDateTimeInputValue(slot.endTime),
+    });
+  }
+
+  function resetSlotForm() {
+    setEditingSlotId(null);
+    setSlotForm({
+      startTime: toDateTimeInput(selectedDate, 8),
+      endTime: toDateTimeInput(selectedDate, 9),
+    });
+  }
+
+  async function handleSlotSubmit(event) {
+    event.preventDefault();
+    if (!selectedSchedule) {
+      setError('Create a working day before adding time slots');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    const payload = {
+      scheduleId: selectedSchedule.id,
+      startTime: toApiDateTime(slotForm.startTime),
+      endTime: toApiDateTime(slotForm.endTime),
+    };
+
+    try {
+      if (editingSlotId) {
+        await updateTimeSlot(editingSlotId, payload);
+      } else {
+        await createTimeSlot(payload);
+      }
+      await loadTimeSlots(selectedSchedule.id);
+      resetSlotForm();
+    } catch (err) {
+      setError(err.message ?? 'Unable to save time slot');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSlotDelete(slotId) {
+    setSaving(true);
+    setError('');
+    try {
+      await deleteTimeSlot(slotId);
+      await loadTimeSlots(selectedSchedule?.id);
+      if (editingSlotId === slotId) {
+        resetSlotForm();
+      }
+    } catch (err) {
+      setError(err.message ?? 'Unable to delete time slot');
     } finally {
       setSaving(false);
     }
@@ -196,6 +329,78 @@ export default function DoctorSchedulePage() {
               </div>
             </div>
           ))
+        )}
+      </div>
+
+      <div className={styles.slotPanel}>
+        <div className={styles.listHeader}>
+          <h2>Time slots</h2>
+          <span>{selectedSchedule ? formatDisplayDate(selectedSchedule.date) : 'No schedule selected'}</span>
+        </div>
+
+        <form className={styles.slotForm} onSubmit={handleSlotSubmit}>
+          <div className={styles.fieldGroup}>
+            <label className={styles.label} htmlFor="slot-start">Start</label>
+            <input
+              id="slot-start"
+              className={styles.input}
+              type="datetime-local"
+              value={slotForm.startTime}
+              onChange={(event) => setSlotForm((current) => ({ ...current, startTime: event.target.value }))}
+              disabled={!selectedSchedule || saving}
+              required
+            />
+          </div>
+          <div className={styles.fieldGroup}>
+            <label className={styles.label} htmlFor="slot-end">End</label>
+            <input
+              id="slot-end"
+              className={styles.input}
+              type="datetime-local"
+              value={slotForm.endTime}
+              onChange={(event) => setSlotForm((current) => ({ ...current, endTime: event.target.value }))}
+              disabled={!selectedSchedule || saving}
+              required
+            />
+          </div>
+          <div className={styles.actions}>
+            <button className={styles.primaryButton} type="submit" disabled={!selectedSchedule || saving}>
+              {editingSlotId ? 'Update slot' : 'Add slot'}
+            </button>
+            {editingSlotId && (
+              <button className={styles.secondaryButton} type="button" onClick={resetSlotForm} disabled={saving}>
+                Cancel
+              </button>
+            )}
+          </div>
+        </form>
+
+        {slotsLoading ? (
+          <p className={styles.empty}>Loading time slots...</p>
+        ) : timeSlots.length === 0 ? (
+          <p className={styles.empty}>No time slots for this day.</p>
+        ) : (
+          <div className={styles.slotList}>
+            {timeSlots.map((slot) => {
+              const booked = slot.status === 'BOOKED';
+              return (
+                <div className={styles.slotRow} key={slot.id}>
+                  <div>
+                    <strong>{formatTimeRange(slot)}</strong>
+                    <span className={`${styles.status} ${booked ? styles.booked : ''}`}>{slot.status}</span>
+                  </div>
+                  <div className={styles.rowActions}>
+                    <button className={styles.secondaryButton} type="button" onClick={() => startSlotEdit(slot)} disabled={saving || booked}>
+                      Edit
+                    </button>
+                    <button className={styles.dangerButton} type="button" onClick={() => handleSlotDelete(slot.id)} disabled={saving || booked}>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
     </section>

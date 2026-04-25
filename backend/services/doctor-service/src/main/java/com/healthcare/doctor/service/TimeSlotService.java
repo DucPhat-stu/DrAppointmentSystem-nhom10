@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -29,6 +30,15 @@ public class TimeSlotService {
         this.timeSlotRepository = timeSlotRepository;
         this.scheduleRepository = scheduleRepository;
         this.clock = clock;
+    }
+
+    @Transactional(readOnly = true)
+    public List<TimeSlotResponse> list(UUID doctorId, UUID scheduleId) {
+        DoctorScheduleEntity schedule = findOwnedSchedule(doctorId, scheduleId);
+        return timeSlotRepository.findAllByScheduleIdOrderByStartTimeAsc(schedule.getId())
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     @Transactional

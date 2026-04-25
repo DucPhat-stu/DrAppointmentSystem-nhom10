@@ -31,3 +31,27 @@ export function deleteDoctorSchedule(scheduleId) {
     method: 'DELETE',
   });
 }
+
+export function fetchScheduleTimeSlots(scheduleId) {
+  return doctorApi(`/api/v1/doctors/schedules/${scheduleId}/time-slots`);
+}
+
+export function createTimeSlot(payload) {
+  return doctorApi('/api/v1/doctors/time-slots', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateTimeSlot(slotId, payload) {
+  return doctorApi(`/api/v1/doctors/time-slots/${slotId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteTimeSlot(slotId) {
+  return doctorApi(`/api/v1/doctors/time-slots/${slotId}`, {
+    method: 'DELETE',
+  });
+}

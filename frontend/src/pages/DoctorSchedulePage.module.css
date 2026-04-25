@@ -51,7 +51,8 @@
 
 .form,
 .weekPanel,
-.list {
+.list,
+.slotPanel {
   padding: 20px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -63,6 +64,25 @@
   flex-direction: column;
   gap: 14px;
   align-self: start;
+}
+
+.slotPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.slotForm {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr)) auto;
+  gap: 14px;
+  align-items: end;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .label {
@@ -174,17 +194,47 @@
   font-size: var(--font-size-sm);
 }
 
-.row {
+.row,
+.slotRow {
   padding: 14px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.035);
 }
 
-.row div:first-child {
+.row div:first-child,
+.slotRow div:first-child {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.slotList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.slotRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.status {
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(34, 197, 94, 0.12);
+  color: #86efac;
+  font-size: 12px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.booked {
+  background: rgba(245, 158, 11, 0.14);
+  color: #fcd34d;
 }
 
 .empty {
@@ -193,14 +243,17 @@
 
 @media (max-width: 960px) {
   .grid,
-  .weekGrid {
+  .weekGrid,
+  .slotForm,
+  .slotList {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 640px) {
   .header,
-  .row {
+  .row,
+  .slotRow {
     align-items: stretch;
     flex-direction: column;
   }
