@@ -12,6 +12,8 @@ import ProfilePage from '../pages/ProfilePage.jsx';
 import NotificationPage from '../pages/NotificationPage.jsx';
 import DoctorSchedulePage from '../pages/DoctorSchedulePage.jsx';
 import DoctorAppointmentDashboardPage from '../pages/DoctorAppointmentDashboardPage.jsx';
+import DoctorLeavePage from '../pages/DoctorLeavePage.jsx';
+import AdminLeavePage from '../pages/AdminLeavePage.jsx';
 
 function ProtectedLayout() {
   const { session } = useAuth();
@@ -74,6 +76,14 @@ export const router = createBrowserRouter([
       {
         path: '/doctor/appointments',
         element: <DoctorAppointmentDashboardPage />,
+      },
+      {
+        path: '/doctor/leaves',
+        element: <DoctorLeavePage />,
+      },
+      {
+        path: '/admin/leaves',
+        element: <AdminLeavePage />,
       },
     ],
   },

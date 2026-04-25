@@ -122,3 +122,39 @@ export function fetchPatientHistory(patientId, { page = 0, size = 10 } = {}) {
   });
   return doctorApi(`/api/v1/doctors/patients/${patientId}/history?${params.toString()}`);
 }
+
+export function fetchDoctorLeaves() {
+  return doctorApi('/api/v1/doctors/leaves');
+}
+
+export function createDoctorLeave(payload) {
+  return doctorApi('/api/v1/doctors/leaves', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function fetchAdminLeaves({ status, page = 0, size = 20 } = {}) {
+  const params = new URLSearchParams({
+    page: String(page),
+    size: String(size),
+  });
+  if (status) {
+    params.set('status', status);
+  }
+  return doctorApi(`/api/v1/admin/leaves?${params.toString()}`);
+}
+
+export function approveDoctorLeave(leaveId) {
+  return doctorApi(`/api/v1/admin/leaves/${leaveId}/approve`, {
+    method: 'PUT',
+    body: JSON.stringify({ reason: null }),
+  });
+}
+
+export function rejectDoctorLeave(leaveId, reason) {
+  return doctorApi(`/api/v1/admin/leaves/${leaveId}/reject`, {
+    method: 'PUT',
+    body: JSON.stringify({ reason }),
+  });
+}
