@@ -26,10 +26,6 @@ public class CurrentDoctorResolver {
         if (attribute instanceof String value && !value.isBlank()) {
             return value;
         }
-        String header = request.getHeader(name);
-        if (header != null && !header.isBlank()) {
-            return header;
-        }
         throw new ApiException(ErrorCode.UNAUTHORIZED, "Missing authenticated user context");
     }
 

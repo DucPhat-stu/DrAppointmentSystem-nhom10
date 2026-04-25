@@ -76,6 +76,7 @@ public class AuthController {
                 request.actor() != null ? request.actor().toRole() : null
         ));
         LoginResponse response = new LoginResponse(
+                result.userId(),
                 result.accessToken(),
                 result.refreshToken(),
                 result.expiresInSeconds(),

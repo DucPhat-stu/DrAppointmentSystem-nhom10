@@ -1,6 +1,7 @@
 package com.healthcare.doctor.repository;
 
 import com.healthcare.doctor.entity.TimeSlotEntity;
+import com.healthcare.doctor.domain.TimeSlotStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,6 +12,8 @@ import java.util.UUID;
 
 public interface TimeSlotJpaRepository extends JpaRepository<TimeSlotEntity, UUID> {
     List<TimeSlotEntity> findAllByScheduleIdOrderByStartTimeAsc(UUID scheduleId);
+
+    boolean existsByScheduleIdAndStatus(UUID scheduleId, TimeSlotStatus status);
 
     @Query("""
             select count(slot) > 0

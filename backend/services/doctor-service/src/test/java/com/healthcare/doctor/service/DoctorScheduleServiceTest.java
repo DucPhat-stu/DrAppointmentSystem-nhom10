@@ -1,8 +1,10 @@
 package com.healthcare.doctor.service;
 
+import com.healthcare.doctor.domain.TimeSlotStatus;
 import com.healthcare.doctor.dto.ScheduleRequest;
 import com.healthcare.doctor.entity.DoctorScheduleEntity;
 import com.healthcare.doctor.repository.DoctorScheduleJpaRepository;
+import com.healthcare.doctor.repository.TimeSlotJpaRepository;
 import com.healthcare.shared.api.ErrorCode;
 import com.healthcare.shared.common.exception.ApiException;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,11 +33,14 @@ class DoctorScheduleServiceTest {
     @Mock
     private DoctorScheduleJpaRepository scheduleRepository;
 
+    @Mock
+    private TimeSlotJpaRepository timeSlotRepository;
+
     private DoctorScheduleService service;
 
     @BeforeEach
     void setUp() {
-        service = new DoctorScheduleService(scheduleRepository, FIXED_CLOCK);
+        service = new DoctorScheduleService(scheduleRepository, timeSlotRepository, FIXED_CLOCK);
     }
 
     @Test
@@ -77,5 +82,20 @@ class DoctorScheduleServiceTest {
                 .isInstanceOf(ApiException.class)
                 .extracting(exception -> ((ApiException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.RESOURCE_NOT_FOUND);
+    }
+
+    @Test
+    void deleteRejectsScheduleWithBookedSlots() {
+        UUID doctorId = UUID.randomUUID();
+        UUID scheduleId = UUID.randomUUID();
+        DoctorScheduleEntity schedule = DoctorScheduleEntity.create(doctorId, LocalDate.of(2026, 6, 25), FIXED_CLOCK);
+        schedule.setId(scheduleId);
+        when(scheduleRepository.findByIdAndDoctorId(scheduleId, doctorId)).thenReturn(Optional.of(schedule));
+        when(timeSlotRepository.existsByScheduleIdAndStatus(scheduleId, TimeSlotStatus.BOOKED)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.delete(doctorId, scheduleId))
+                .isInstanceOf(ApiException.class)
+                .extracting(exception -> ((ApiException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.CONFLICT);
     }
 }

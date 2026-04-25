@@ -79,12 +79,6 @@ export async function httpClient(service, path, options = {}) {
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    if (session?.userId) {
-      headers['X-User-Id'] = session.userId;
-    }
-    if (session?.role) {
-      headers['X-User-Role'] = session.role;
-    }
   }
 
   const url = buildUrl(service, path);

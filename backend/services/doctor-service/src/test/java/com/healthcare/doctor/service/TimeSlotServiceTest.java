@@ -123,6 +123,36 @@ class TimeSlotServiceTest {
         assertThat(response.getFirst().scheduleId()).isEqualTo(scheduleId);
     }
 
+    @Test
+    void updateRejectsScheduleChange() {
+        UUID doctorId = UUID.randomUUID();
+        UUID scheduleId = UUID.randomUUID();
+        UUID otherScheduleId = UUID.randomUUID();
+        UUID slotId = UUID.randomUUID();
+        DoctorScheduleEntity schedule = schedule(scheduleId, doctorId, LocalDate.of(2026, 6, 25));
+        TimeSlotEntity slot = TimeSlotEntity.create(
+                scheduleId,
+                OffsetDateTime.parse("2026-06-25T08:00:00Z"),
+                OffsetDateTime.parse("2026-06-25T09:00:00Z"),
+                FIXED_CLOCK
+        );
+        slot.setId(slotId);
+        when(timeSlotRepository.findById(slotId)).thenReturn(Optional.of(slot));
+        when(scheduleRepository.findByIdAndDoctorId(scheduleId, doctorId)).thenReturn(Optional.of(schedule));
+
+        assertThatThrownBy(() -> service.update(
+                doctorId,
+                slotId,
+                new TimeSlotRequest(
+                        otherScheduleId,
+                        OffsetDateTime.parse("2026-06-25T10:00:00Z"),
+                        OffsetDateTime.parse("2026-06-25T11:00:00Z")
+                )))
+                .isInstanceOf(ApiException.class)
+                .extracting(exception -> ((ApiException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.VALIDATION_ERROR);
+    }
+
     private DoctorScheduleEntity schedule(UUID scheduleId, UUID doctorId, LocalDate date) {
         DoctorScheduleEntity schedule = DoctorScheduleEntity.create(doctorId, date, FIXED_CLOCK);
         schedule.setId(scheduleId);

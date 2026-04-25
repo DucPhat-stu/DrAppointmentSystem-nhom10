@@ -2,10 +2,13 @@ package com.healthcare.doctor.service;
 
 import com.healthcare.doctor.dto.ScheduleRequest;
 import com.healthcare.doctor.dto.ScheduleResponse;
+import com.healthcare.doctor.domain.TimeSlotStatus;
 import com.healthcare.doctor.entity.DoctorScheduleEntity;
 import com.healthcare.doctor.repository.DoctorScheduleJpaRepository;
+import com.healthcare.doctor.repository.TimeSlotJpaRepository;
 import com.healthcare.shared.api.ErrorCode;
 import com.healthcare.shared.common.exception.ApiException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,10 +20,14 @@ import java.util.UUID;
 @Service
 public class DoctorScheduleService {
     private final DoctorScheduleJpaRepository scheduleRepository;
+    private final TimeSlotJpaRepository timeSlotRepository;
     private final Clock clock;
 
-    public DoctorScheduleService(DoctorScheduleJpaRepository scheduleRepository, Clock clock) {
+    public DoctorScheduleService(DoctorScheduleJpaRepository scheduleRepository,
+                                 TimeSlotJpaRepository timeSlotRepository,
+                                 Clock clock) {
         this.scheduleRepository = scheduleRepository;
+        this.timeSlotRepository = timeSlotRepository;
         this.clock = clock;
     }
 
@@ -31,8 +38,12 @@ public class DoctorScheduleService {
             throw new ApiException(ErrorCode.CONFLICT, "Doctor schedule already exists for date: " + date);
         }
 
-        DoctorScheduleEntity saved = scheduleRepository.save(DoctorScheduleEntity.create(doctorId, date, clock));
-        return toResponse(saved);
+        try {
+            DoctorScheduleEntity saved = scheduleRepository.save(DoctorScheduleEntity.create(doctorId, date, clock));
+            return toResponse(saved);
+        } catch (DataIntegrityViolationException exception) {
+            throw new ApiException(ErrorCode.CONFLICT, "Doctor schedule already exists for date: " + date);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -54,12 +65,19 @@ public class DoctorScheduleService {
         }
 
         schedule.setDate(newDate);
-        return toResponse(scheduleRepository.save(schedule));
+        try {
+            return toResponse(scheduleRepository.save(schedule));
+        } catch (DataIntegrityViolationException exception) {
+            throw new ApiException(ErrorCode.CONFLICT, "Doctor schedule already exists for date: " + newDate);
+        }
     }
 
     @Transactional
     public void delete(UUID doctorId, UUID scheduleId) {
         DoctorScheduleEntity schedule = findOwnedSchedule(doctorId, scheduleId);
+        if (timeSlotRepository.existsByScheduleIdAndStatus(schedule.getId(), TimeSlotStatus.BOOKED)) {
+            throw new ApiException(ErrorCode.CONFLICT, "Cannot delete a schedule with booked time slots");
+        }
         scheduleRepository.delete(schedule);
     }
 

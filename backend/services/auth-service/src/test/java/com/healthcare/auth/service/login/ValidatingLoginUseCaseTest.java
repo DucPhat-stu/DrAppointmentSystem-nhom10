@@ -104,6 +104,7 @@ class ValidatingLoginUseCaseTest {
         assertThat(savedToken.token()).isEqualTo("refresh-token");
         assertThat(savedToken.createdAt()).isEqualTo(issuedAt);
         assertThat(savedToken.expiresAt()).isEqualTo(issuedAt.plusDays(7));
+        assertThat(result.userId()).isEqualTo(userId);
         assertThat(result.accessToken()).isEqualTo("access-token");
         assertThat(result.refreshToken()).isEqualTo("refresh-token");
         assertThat(result.expiresInSeconds()).isEqualTo(900);
@@ -136,6 +137,9 @@ class ValidatingLoginUseCaseTest {
 
         verify(loginTokenIssuer, never()).issue(userCredential);
         verify(refreshTokenWriter, never()).save(org.mockito.ArgumentMatchers.any());
-        verify(userLoginTracker, never()).markSuccessfulLogin(userId, org.mockito.ArgumentMatchers.any());
+        verify(userLoginTracker, never()).markSuccessfulLogin(
+                org.mockito.ArgumentMatchers.eq(userId),
+                org.mockito.ArgumentMatchers.any()
+        );
     }
 }

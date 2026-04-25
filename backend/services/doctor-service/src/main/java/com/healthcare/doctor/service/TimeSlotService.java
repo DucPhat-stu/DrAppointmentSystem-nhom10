@@ -9,6 +9,7 @@ import com.healthcare.doctor.repository.DoctorScheduleJpaRepository;
 import com.healthcare.doctor.repository.TimeSlotJpaRepository;
 import com.healthcare.shared.api.ErrorCode;
 import com.healthcare.shared.common.exception.ApiException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,37 +45,51 @@ public class TimeSlotService {
     @Transactional
     public TimeSlotResponse create(UUID doctorId, TimeSlotRequest request) {
         DoctorScheduleEntity schedule = findOwnedSchedule(doctorId, request.scheduleId());
-        validateRange(schedule, request.startTime(), request.endTime());
-        if (timeSlotRepository.existsOverlap(schedule.getId(), request.startTime(), request.endTime())) {
+        OffsetDateTime startTime = toUtc(request.startTime());
+        OffsetDateTime endTime = toUtc(request.endTime());
+        validateRange(schedule, startTime, endTime);
+        if (timeSlotRepository.existsOverlap(schedule.getId(), startTime, endTime)) {
             throw new ApiException(ErrorCode.CONFLICT, "Time slot overlaps with an existing slot");
         }
 
-        TimeSlotEntity saved = timeSlotRepository.save(TimeSlotEntity.create(
-                schedule.getId(),
-                request.startTime().withOffsetSameInstant(ZoneOffset.UTC),
-                request.endTime().withOffsetSameInstant(ZoneOffset.UTC),
-                clock
-        ));
-        return toResponse(saved);
+        try {
+            TimeSlotEntity saved = timeSlotRepository.save(TimeSlotEntity.create(
+                    schedule.getId(),
+                    startTime,
+                    endTime,
+                    clock
+            ));
+            return toResponse(saved);
+        } catch (DataIntegrityViolationException exception) {
+            throw new ApiException(ErrorCode.CONFLICT, "Time slot overlaps with an existing slot");
+        }
     }
 
     @Transactional
     public TimeSlotResponse update(UUID doctorId, UUID slotId, TimeSlotRequest request) {
-        DoctorScheduleEntity schedule = findOwnedSchedule(doctorId, request.scheduleId());
         TimeSlotEntity slot = findSlot(slotId);
+        DoctorScheduleEntity schedule = findOwnedSchedule(doctorId, slot.getScheduleId());
+        if (!slot.getScheduleId().equals(request.scheduleId())) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Time slot schedule cannot be changed");
+        }
         if (slot.getStatus() == TimeSlotStatus.BOOKED) {
             throw new ApiException(ErrorCode.CONFLICT, "Booked time slots cannot be updated");
         }
 
-        validateRange(schedule, request.startTime(), request.endTime());
-        if (timeSlotRepository.existsOverlapExcluding(schedule.getId(), slotId, request.startTime(), request.endTime())) {
+        OffsetDateTime startTime = toUtc(request.startTime());
+        OffsetDateTime endTime = toUtc(request.endTime());
+        validateRange(schedule, startTime, endTime);
+        if (timeSlotRepository.existsOverlapExcluding(schedule.getId(), slotId, startTime, endTime)) {
             throw new ApiException(ErrorCode.CONFLICT, "Time slot overlaps with an existing slot");
         }
 
-        slot.setScheduleId(schedule.getId());
-        slot.setStartTime(request.startTime().withOffsetSameInstant(ZoneOffset.UTC));
-        slot.setEndTime(request.endTime().withOffsetSameInstant(ZoneOffset.UTC));
-        return toResponse(timeSlotRepository.save(slot));
+        slot.setStartTime(startTime);
+        slot.setEndTime(endTime);
+        try {
+            return toResponse(timeSlotRepository.save(slot));
+        } catch (DataIntegrityViolationException exception) {
+            throw new ApiException(ErrorCode.CONFLICT, "Time slot overlaps with an existing slot");
+        }
     }
 
     @Transactional
@@ -104,10 +119,14 @@ public class TimeSlotService {
         if (!startTime.isBefore(endTime)) {
             throw new ApiException(ErrorCode.VALIDATION_ERROR, "Start time must be before end time");
         }
-        if (!startTime.withOffsetSameInstant(ZoneOffset.UTC).toLocalDate().equals(schedule.getDate())
-                || !endTime.withOffsetSameInstant(ZoneOffset.UTC).toLocalDate().equals(schedule.getDate())) {
+        if (!startTime.toLocalDate().equals(schedule.getDate())
+                || !endTime.toLocalDate().equals(schedule.getDate())) {
             throw new ApiException(ErrorCode.VALIDATION_ERROR, "Time slot must be within the schedule date");
         }
+    }
+
+    private OffsetDateTime toUtc(OffsetDateTime value) {
+        return value.withOffsetSameInstant(ZoneOffset.UTC);
     }
 
     private TimeSlotResponse toResponse(TimeSlotEntity entity) {

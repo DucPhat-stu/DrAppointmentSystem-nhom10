@@ -58,6 +58,7 @@ public class ValidatingLoginUseCase implements LoginUseCase {
         userLoginTracker.markSuccessfulLogin(userCredential.userId(), issuedTokenPair.issuedAt());
 
         return new LoginResult(
+                userCredential.userId(),
                 issuedTokenPair.accessToken(),
                 issuedTokenPair.refreshToken(),
                 issuedTokenPair.expiresInSeconds(),
