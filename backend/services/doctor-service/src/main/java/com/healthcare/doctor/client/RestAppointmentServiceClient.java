@@ -18,6 +18,7 @@ import java.util.UUID;
 
 @Component
 public class RestAppointmentServiceClient implements AppointmentServiceClient {
+    private static final int MAX_ATTEMPTS = 3;
     private static final ParameterizedTypeReference<ApiResponse<DoctorAppointmentPageResponse>> PAGE_TYPE =
             new ParameterizedTypeReference<>() {
             };
@@ -94,18 +95,33 @@ public class RestAppointmentServiceClient implements AppointmentServiceClient {
     }
 
     private <T> T handle(RemoteCall<T> call) {
+        for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            try {
+                return call.execute();
+            } catch (RestClientResponseException exception) {
+                if (exception.getStatusCode() == HttpStatus.NOT_FOUND) {
+                    throw new ApiException(ErrorCode.RESOURCE_NOT_FOUND, "Appointment not found");
+                }
+                if (exception.getStatusCode() == HttpStatus.CONFLICT) {
+                    throw new ApiException(ErrorCode.CONFLICT, "Appointment action is not allowed");
+                }
+                throw new ApiException(ErrorCode.SERVICE_UNAVAILABLE, "Appointment service returned an error");
+            } catch (RestClientException exception) {
+                if (attempt == MAX_ATTEMPTS) {
+                    throw new ApiException(ErrorCode.SERVICE_UNAVAILABLE, "Appointment service is unavailable");
+                }
+                backoff(attempt);
+            }
+        }
+        throw new ApiException(ErrorCode.SERVICE_UNAVAILABLE, "Appointment service is unavailable");
+    }
+
+    private void backoff(int attempt) {
         try {
-            return call.execute();
-        } catch (RestClientResponseException exception) {
-            if (exception.getStatusCode() == HttpStatus.NOT_FOUND) {
-                throw new ApiException(ErrorCode.RESOURCE_NOT_FOUND, "Appointment not found");
-            }
-            if (exception.getStatusCode() == HttpStatus.CONFLICT) {
-                throw new ApiException(ErrorCode.CONFLICT, "Appointment action is not allowed");
-            }
-            throw new ApiException(ErrorCode.SERVICE_UNAVAILABLE, "Appointment service returned an error");
-        } catch (RestClientException exception) {
-            throw new ApiException(ErrorCode.SERVICE_UNAVAILABLE, "Appointment service is unavailable");
+            Thread.sleep(100L * attempt);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new ApiException(ErrorCode.SERVICE_UNAVAILABLE, "Appointment service retry was interrupted");
         }
     }
 

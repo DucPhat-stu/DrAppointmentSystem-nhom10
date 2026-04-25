@@ -1,6 +1,7 @@
 package com.healthcare.appointment.events;
 
 import com.healthcare.appointment.entity.AppointmentEntity;
+import com.healthcare.appointment.config.RabbitConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpException;
@@ -13,8 +14,6 @@ import java.util.Map;
 @Component
 public class RabbitAppointmentEventPublisher implements AppointmentEventPublisher {
     private static final Logger log = LoggerFactory.getLogger(RabbitAppointmentEventPublisher.class);
-    private static final String EXCHANGE = "appointment.events";
-
     private final RabbitTemplate rabbitTemplate;
 
     public RabbitAppointmentEventPublisher(RabbitTemplate rabbitTemplate) {
@@ -31,7 +30,7 @@ public class RabbitAppointmentEventPublisher implements AppointmentEventPublishe
                 "patientId", appointment.getPatientId().toString()
         );
         try {
-            rabbitTemplate.convertAndSend(EXCHANGE, eventName, event);
+            rabbitTemplate.convertAndSend(RabbitConfig.APPOINTMENT_EVENTS_EXCHANGE, eventName, event);
         } catch (AmqpException exception) {
             log.warn("Could not publish appointment event {}", eventName, exception);
         }
