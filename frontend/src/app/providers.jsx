@@ -37,6 +37,7 @@ export function AppProviders({ children }) {
       const response = await authService.login({ email, password, actor });
 
       const sessionData = {
+        userId: response.data?.userId ?? null,
         email: response.data?.email ?? email,
         role: response.data?.role ?? actor,
         accessToken: response.data?.accessToken ?? null,

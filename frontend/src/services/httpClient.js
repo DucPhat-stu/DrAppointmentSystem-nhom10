@@ -33,6 +33,15 @@ function getAccessToken() {
   }
 }
 
+function getSession() {
+  try {
+    const raw = sessionStorage.getItem('healthcare.session');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Custom API error with structured data from backend envelope.
  */
@@ -65,9 +74,16 @@ export async function httpClient(service, path, options = {}) {
 
   // Auto-attach JWT unless skipped
   if (!skipAuth) {
-    const token = getAccessToken();
+    const session = getSession();
+    const token = session?.accessToken ?? getAccessToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+    }
+    if (session?.userId) {
+      headers['X-User-Id'] = session.userId;
+    }
+    if (session?.role) {
+      headers['X-User-Role'] = session.role;
     }
   }
 

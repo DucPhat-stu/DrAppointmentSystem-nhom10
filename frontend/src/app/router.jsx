@@ -10,6 +10,7 @@ import BookAppointmentPage from '../pages/BookAppointmentPage.jsx';
 import AppointmentDetailPage from '../pages/AppointmentDetailPage.jsx';
 import ProfilePage from '../pages/ProfilePage.jsx';
 import NotificationPage from '../pages/NotificationPage.jsx';
+import DoctorSchedulePage from '../pages/DoctorSchedulePage.jsx';
 
 function ProtectedLayout() {
   const { session } = useAuth();
@@ -64,6 +65,10 @@ export const router = createBrowserRouter([
       {
         path: '/notifications',
         element: <NotificationPage />,
+      },
+      {
+        path: '/doctor/schedules',
+        element: <DoctorSchedulePage />,
       },
     ],
   },
