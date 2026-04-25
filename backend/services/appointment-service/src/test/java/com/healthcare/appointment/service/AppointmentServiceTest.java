@@ -1,5 +1,6 @@
 package com.healthcare.appointment.service;
 
+import com.healthcare.appointment.client.DoctorSlotClient;
 import com.healthcare.appointment.domain.AppointmentStatus;
 import com.healthcare.appointment.dto.AppointmentActionRequest;
 import com.healthcare.appointment.entity.AppointmentEntity;
@@ -36,11 +37,14 @@ class AppointmentServiceTest {
     @Mock
     private AppointmentEventPublisher eventPublisher;
 
+    @Mock
+    private DoctorSlotClient doctorSlotClient;
+
     private AppointmentService service;
 
     @BeforeEach
     void setUp() {
-        service = new AppointmentService(appointmentRepository, idempotencyRepository, eventPublisher);
+        service = new AppointmentService(appointmentRepository, idempotencyRepository, eventPublisher, doctorSlotClient);
     }
 
     @Test
@@ -55,6 +59,7 @@ class AppointmentServiceTest {
 
         assertThat(response.status()).isEqualTo(AppointmentStatus.CONFIRMED);
         verify(eventPublisher).publishStatusChanged("APPOINTMENT_CONFIRMED", appointment);
+        verify(doctorSlotClient).updateSlotStatus(appointment.getSlotId(), "BOOKED");
     }
 
     @Test
@@ -69,6 +74,7 @@ class AppointmentServiceTest {
         assertThat(response.status()).isEqualTo(AppointmentStatus.CONFIRMED);
         verify(appointmentRepository, never()).save(any());
         verify(eventPublisher, never()).publishStatusChanged(any(), any());
+        verify(doctorSlotClient, never()).updateSlotStatus(any(), any());
     }
 
     @Test
@@ -89,6 +95,7 @@ class AppointmentServiceTest {
         appointment.setId(appointmentId);
         appointment.setDoctorId(doctorId);
         appointment.setPatientId(UUID.randomUUID());
+        appointment.setSlotId(UUID.randomUUID());
         appointment.setScheduledStart(OffsetDateTime.parse("2026-06-25T08:00:00Z"));
         appointment.setScheduledEnd(OffsetDateTime.parse("2026-06-25T09:00:00Z"));
         appointment.setStatus(status);

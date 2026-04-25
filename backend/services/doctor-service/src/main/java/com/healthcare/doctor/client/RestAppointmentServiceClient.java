@@ -1,7 +1,9 @@
 package com.healthcare.doctor.client;
 
 import com.healthcare.doctor.dto.AppointmentActionRequest;
+import com.healthcare.doctor.config.AppointmentClientProperties;
 import com.healthcare.doctor.dto.DoctorAppointmentPageResponse;
+import com.healthcare.doctor.dto.DoctorAppointmentOwnershipResponse;
 import com.healthcare.doctor.dto.DoctorAppointmentResponse;
 import com.healthcare.shared.api.ApiResponse;
 import com.healthcare.shared.api.ErrorCode;
@@ -25,11 +27,16 @@ public class RestAppointmentServiceClient implements AppointmentServiceClient {
     private static final ParameterizedTypeReference<ApiResponse<DoctorAppointmentResponse>> DETAIL_TYPE =
             new ParameterizedTypeReference<>() {
             };
+    private static final ParameterizedTypeReference<ApiResponse<DoctorAppointmentOwnershipResponse>> OWNERSHIP_TYPE =
+            new ParameterizedTypeReference<>() {
+            };
 
     private final RestClient appointmentRestClient;
+    private final AppointmentClientProperties properties;
 
-    public RestAppointmentServiceClient(RestClient appointmentRestClient) {
+    public RestAppointmentServiceClient(RestClient appointmentRestClient, AppointmentClientProperties properties) {
         this.appointmentRestClient = appointmentRestClient;
+        this.properties = properties;
     }
 
     @Override
@@ -47,6 +54,7 @@ public class RestAppointmentServiceClient implements AppointmentServiceClient {
                     }
                     return uriBuilder.build(doctorId);
                 })
+                .header("X-Internal-Service-Token", properties.getServiceToken())
                 .retrieve()
                 .body(PAGE_TYPE)
                 .data());
@@ -56,8 +64,19 @@ public class RestAppointmentServiceClient implements AppointmentServiceClient {
     public DoctorAppointmentResponse getDoctorAppointment(UUID doctorId, UUID appointmentId) {
         return handle(() -> appointmentRestClient.get()
                 .uri("/internal/doctors/{doctorId}/appointments/{appointmentId}", doctorId, appointmentId)
+                .header("X-Internal-Service-Token", properties.getServiceToken())
                 .retrieve()
                 .body(DETAIL_TYPE)
+                .data());
+    }
+
+    @Override
+    public DoctorAppointmentOwnershipResponse getDoctorAppointmentOwnership(UUID doctorId, UUID appointmentId) {
+        return handle(() -> appointmentRestClient.get()
+                .uri("/internal/doctors/{doctorId}/appointments/{appointmentId}/ownership", doctorId, appointmentId)
+                .header("X-Internal-Service-Token", properties.getServiceToken())
+                .retrieve()
+                .body(OWNERSHIP_TYPE)
                 .data());
     }
 
@@ -84,6 +103,7 @@ public class RestAppointmentServiceClient implements AppointmentServiceClient {
         return handle(() -> {
             RestClient.RequestBodySpec spec = appointmentRestClient.put()
                     .uri("/internal/doctors/{doctorId}/appointments/{appointmentId}/{action}", doctorId, appointmentId, action);
+            spec.header("X-Internal-Service-Token", properties.getServiceToken());
             if (idempotencyKey != null && !idempotencyKey.isBlank()) {
                 spec.header("X-Idempotency-Key", idempotencyKey);
             }

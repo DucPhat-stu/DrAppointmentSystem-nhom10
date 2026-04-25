@@ -2,6 +2,7 @@ package com.healthcare.doctor.client;
 
 import com.healthcare.doctor.dto.AppointmentActionRequest;
 import com.healthcare.doctor.dto.DoctorAppointmentPageResponse;
+import com.healthcare.doctor.dto.DoctorAppointmentOwnershipResponse;
 import com.healthcare.doctor.dto.DoctorAppointmentResponse;
 
 import java.time.LocalDate;
@@ -11,6 +12,8 @@ public interface AppointmentServiceClient {
     DoctorAppointmentPageResponse findDoctorAppointments(UUID doctorId, LocalDate date, String status, int page, int size);
 
     DoctorAppointmentResponse getDoctorAppointment(UUID doctorId, UUID appointmentId);
+
+    DoctorAppointmentOwnershipResponse getDoctorAppointmentOwnership(UUID doctorId, UUID appointmentId);
 
     DoctorAppointmentResponse confirm(UUID doctorId, UUID appointmentId, String idempotencyKey);
 

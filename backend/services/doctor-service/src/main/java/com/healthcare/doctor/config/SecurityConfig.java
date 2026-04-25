@@ -1,6 +1,7 @@
 package com.healthcare.doctor.config;
 
 import com.healthcare.doctor.security.JwtAuthenticationFilter;
+import com.healthcare.doctor.security.InternalServiceTokenFilter;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,10 +18,12 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 @Configuration
-@EnableConfigurationProperties({JwtProperties.class, AppointmentClientProperties.class})
+@EnableConfigurationProperties({JwtProperties.class, AppointmentClientProperties.class, InternalServiceProperties.class})
 public class SecurityConfig {
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, JwtProperties jwtProperties) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                            JwtProperties jwtProperties,
+                                            InternalServiceProperties internalServiceProperties) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -29,11 +32,16 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/foundation/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/internal/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
+                        new InternalServiceTokenFilter(internalServiceProperties),
+                        org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class
+                )
+                .addFilterBefore(
                         new JwtAuthenticationFilter(jwtProperties),
-                        UsernamePasswordAuthenticationFilter.class
+                        org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class
                 )
                 .build();
     }

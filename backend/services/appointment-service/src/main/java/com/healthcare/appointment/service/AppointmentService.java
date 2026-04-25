@@ -1,7 +1,9 @@
 package com.healthcare.appointment.service;
 
+import com.healthcare.appointment.client.DoctorSlotClient;
 import com.healthcare.appointment.domain.AppointmentStatus;
 import com.healthcare.appointment.dto.AppointmentActionRequest;
+import com.healthcare.appointment.dto.AppointmentOwnershipResponse;
 import com.healthcare.appointment.dto.AppointmentPageResponse;
 import com.healthcare.appointment.dto.AppointmentResponse;
 import com.healthcare.appointment.entity.AppointmentActionIdempotencyEntity;
@@ -31,13 +33,16 @@ public class AppointmentService {
     private final AppointmentJpaRepository appointmentRepository;
     private final AppointmentActionIdempotencyJpaRepository idempotencyRepository;
     private final AppointmentEventPublisher eventPublisher;
+    private final DoctorSlotClient doctorSlotClient;
 
     public AppointmentService(AppointmentJpaRepository appointmentRepository,
                               AppointmentActionIdempotencyJpaRepository idempotencyRepository,
-                              AppointmentEventPublisher eventPublisher) {
+                              AppointmentEventPublisher eventPublisher,
+                              DoctorSlotClient doctorSlotClient) {
         this.appointmentRepository = appointmentRepository;
         this.idempotencyRepository = idempotencyRepository;
         this.eventPublisher = eventPublisher;
+        this.doctorSlotClient = doctorSlotClient;
     }
 
     @Transactional(readOnly = true)
@@ -64,6 +69,17 @@ public class AppointmentService {
     @Transactional(readOnly = true)
     public AppointmentResponse getDoctorAppointment(UUID doctorId, UUID appointmentId) {
         return toResponse(findOwned(doctorId, appointmentId));
+    }
+
+    @Transactional(readOnly = true)
+    public AppointmentOwnershipResponse getDoctorAppointmentOwnership(UUID doctorId, UUID appointmentId) {
+        AppointmentEntity appointment = findOwned(doctorId, appointmentId);
+        return new AppointmentOwnershipResponse(
+                appointment.getId(),
+                appointment.getDoctorId(),
+                appointment.getPatientId(),
+                appointment.getStatus()
+        );
     }
 
     @Transactional
@@ -112,9 +128,21 @@ public class AppointmentService {
         }
 
         AppointmentEntity saved = appointmentRepository.save(appointment);
+        syncSlotStatus(saved, targetStatus);
         recordIdempotency(saved, action, idempotencyKey, targetStatus);
         eventPublisher.publishStatusChanged(eventName, saved);
         return toResponse(saved);
+    }
+
+    private void syncSlotStatus(AppointmentEntity appointment, AppointmentStatus targetStatus) {
+        if (appointment.getSlotId() == null) {
+            return;
+        }
+        if (targetStatus == AppointmentStatus.CONFIRMED) {
+            doctorSlotClient.updateSlotStatus(appointment.getSlotId(), "BOOKED");
+        } else if (targetStatus == AppointmentStatus.REJECTED || targetStatus == AppointmentStatus.CANCELLED) {
+            doctorSlotClient.updateSlotStatus(appointment.getSlotId(), "AVAILABLE");
+        }
     }
 
     private void validateTransition(AppointmentStatus currentStatus, AppointmentStatus targetStatus) {

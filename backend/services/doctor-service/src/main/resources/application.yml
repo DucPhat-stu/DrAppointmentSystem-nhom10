@@ -34,10 +34,13 @@ app:
     database: doctor_db
     rabbitmq-enabled: false
     redis-enabled: false
+  internal:
+    service-token: ${INTERNAL_SERVICE_TOKEN:change-this-before-shared-environments}
   clients:
     appointment-service:
       base-url: ${APPOINTMENT_SERVICE_URL:http://localhost:8084}
       timeout-ms: ${APPOINTMENT_SERVICE_TIMEOUT_MS:2000}
+      service-token: ${INTERNAL_SERVICE_TOKEN:change-this-before-shared-environments}
 
 security:
   jwt:

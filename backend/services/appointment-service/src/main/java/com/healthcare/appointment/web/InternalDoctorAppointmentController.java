@@ -2,6 +2,7 @@ package com.healthcare.appointment.web;
 
 import com.healthcare.appointment.domain.AppointmentStatus;
 import com.healthcare.appointment.dto.AppointmentActionRequest;
+import com.healthcare.appointment.dto.AppointmentOwnershipResponse;
 import com.healthcare.appointment.dto.AppointmentPageResponse;
 import com.healthcare.appointment.dto.AppointmentResponse;
 import com.healthcare.appointment.service.AppointmentService;
@@ -52,6 +53,15 @@ public class InternalDoctorAppointmentController {
         return apiResponseFactory.success(
                 "Appointment loaded",
                 appointmentService.getDoctorAppointment(doctorId, appointmentId)
+        );
+    }
+
+    @GetMapping("/{appointmentId}/ownership")
+    public ApiResponse<AppointmentOwnershipResponse> ownership(@PathVariable UUID doctorId,
+                                                               @PathVariable UUID appointmentId) {
+        return apiResponseFactory.success(
+                "Appointment ownership loaded",
+                appointmentService.getDoctorAppointmentOwnership(doctorId, appointmentId)
         );
     }
 

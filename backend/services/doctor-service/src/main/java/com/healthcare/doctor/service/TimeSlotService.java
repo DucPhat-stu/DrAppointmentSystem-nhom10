@@ -105,6 +105,13 @@ public class TimeSlotService {
         timeSlotRepository.delete(slot);
     }
 
+    @Transactional
+    public TimeSlotResponse updateStatus(UUID slotId, TimeSlotStatus status) {
+        TimeSlotEntity slot = findSlot(slotId);
+        slot.setStatus(status);
+        return toResponse(timeSlotRepository.save(slot));
+    }
+
     private DoctorScheduleEntity findOwnedSchedule(UUID doctorId, UUID scheduleId) {
         return scheduleRepository.findByIdAndDoctorId(scheduleId, doctorId)
                 .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, "Doctor schedule not found"));

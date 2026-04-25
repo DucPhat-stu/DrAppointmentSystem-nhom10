@@ -1,9 +1,9 @@
-package com.healthcare.doctor.config;
+package com.healthcare.appointment.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "app.clients.appointment-service")
-public class AppointmentClientProperties {
+@ConfigurationProperties(prefix = "app.clients.doctor-service")
+public class DoctorClientProperties {
     private String baseUrl;
     private int timeoutMs = 2000;
     private String serviceToken;

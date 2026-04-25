@@ -3,6 +3,7 @@ package com.healthcare.doctor.service;
 import com.healthcare.doctor.client.AppointmentServiceClient;
 import com.healthcare.doctor.dto.AppointmentActionRequest;
 import com.healthcare.doctor.dto.DoctorAppointmentPageResponse;
+import com.healthcare.doctor.dto.DoctorAppointmentOwnershipResponse;
 import com.healthcare.doctor.dto.DoctorAppointmentResponse;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +24,10 @@ public class DoctorAppointmentService {
 
     public DoctorAppointmentResponse get(UUID doctorId, UUID appointmentId) {
         return appointmentServiceClient.getDoctorAppointment(doctorId, appointmentId);
+    }
+
+    public DoctorAppointmentOwnershipResponse ownership(UUID doctorId, UUID appointmentId) {
+        return appointmentServiceClient.getDoctorAppointmentOwnership(doctorId, appointmentId);
     }
 
     public DoctorAppointmentResponse confirm(UUID doctorId, UUID appointmentId, String idempotencyKey) {
