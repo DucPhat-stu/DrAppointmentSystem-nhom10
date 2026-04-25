@@ -47,6 +47,11 @@ public class MedicalRecordService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<MedicalRecordResponse> getRecordsByPatientUserId(UUID patientUserId) {
+        return getRecords(patientUserId);
+    }
+
     /**
      * Get a single medical record detail (patient-scoped).
      */

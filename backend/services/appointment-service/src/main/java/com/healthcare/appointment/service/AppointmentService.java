@@ -67,6 +67,26 @@ public class AppointmentService {
     }
 
     @Transactional(readOnly = true)
+    public AppointmentPageResponse findDoctorPatientAppointments(UUID doctorId,
+                                                                 UUID patientId,
+                                                                 int page,
+                                                                 int size) {
+        PageRequest pageRequest = PageRequest.of(
+                Math.max(page, 0),
+                Math.min(Math.max(size, 1), 100),
+                Sort.by(Sort.Direction.DESC, "scheduledStart")
+        );
+        var appointments = appointmentRepository.findAll(filter(doctorId, patientId), pageRequest);
+        return new AppointmentPageResponse(
+                appointments.getContent().stream().map(this::toResponse).toList(),
+                appointments.getNumber(),
+                appointments.getSize(),
+                appointments.getTotalElements(),
+                appointments.getTotalPages()
+        );
+    }
+
+    @Transactional(readOnly = true)
     public AppointmentResponse getDoctorAppointment(UUID doctorId, UUID appointmentId) {
         return toResponse(findOwned(doctorId, appointmentId));
     }
@@ -197,6 +217,13 @@ public class AppointmentService {
             }
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
         };
+    }
+
+    private Specification<AppointmentEntity> filter(UUID doctorId, UUID patientId) {
+        return (root, query, criteriaBuilder) -> criteriaBuilder.and(
+                criteriaBuilder.equal(root.get("doctorId"), doctorId),
+                criteriaBuilder.equal(root.get("patientId"), patientId)
+        );
     }
 
     private AppointmentResponse toResponse(AppointmentEntity entity) {

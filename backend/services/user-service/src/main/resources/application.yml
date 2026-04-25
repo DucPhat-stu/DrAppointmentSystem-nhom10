@@ -34,6 +34,8 @@ app:
     database: user_db
     rabbitmq-enabled: false
     redis-enabled: false
+  internal:
+    service-token: ${INTERNAL_SERVICE_TOKEN:change-this-before-shared-environments}
 
 security:
   jwt:

@@ -4,7 +4,10 @@ import {
   confirmDoctorAppointment,
   fetchDoctorAppointment,
   fetchDoctorAppointments,
+  fetchAppointmentSoapNote,
+  fetchPatientHistory,
   rejectDoctorAppointment,
+  saveAppointmentSoapNote,
 } from '../services/doctorService.js';
 import styles from './DoctorAppointmentDashboardPage.module.css';
 
@@ -13,6 +16,12 @@ const actionLabels = {
   confirm: 'Confirm appointment',
   reject: 'Reject appointment',
   cancel: 'Cancel appointment',
+};
+const blankSoapNote = {
+  subjective: '',
+  objective: '',
+  assessment: '',
+  plan: '',
 };
 
 function today() {
@@ -43,9 +52,15 @@ export default function DoctorAppointmentDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [clinicalLoading, setClinicalLoading] = useState(false);
+  const [soapSaving, setSoapSaving] = useState(false);
   const [error, setError] = useState('');
+  const [clinicalError, setClinicalError] = useState('');
+  const [clinicalMessage, setClinicalMessage] = useState('');
   const [modal, setModal] = useState(null);
   const [reason, setReason] = useState('');
+  const [soapNote, setSoapNote] = useState(blankSoapNote);
+  const [history, setHistory] = useState(null);
 
   const canPrevious = filters.page > 0;
   const canNext = useMemo(
@@ -75,6 +90,61 @@ export default function DoctorAppointmentDashboardPage() {
   useEffect(() => {
     loadAppointments();
   }, []);
+
+  useEffect(() => {
+    if (!selected?.id) {
+      setSoapNote(blankSoapNote);
+      setHistory(null);
+      setClinicalError('');
+      setClinicalMessage('');
+      return undefined;
+    }
+
+    let cancelled = false;
+    async function loadClinicalContext() {
+      setClinicalLoading(true);
+      setClinicalError('');
+      setClinicalMessage('');
+      setSoapNote(blankSoapNote);
+      setHistory(null);
+
+      try {
+        const [soapResult, historyResult] = await Promise.allSettled([
+          fetchAppointmentSoapNote(selected.id),
+          fetchPatientHistory(selected.patientId, { page: 0, size: 10 }),
+        ]);
+
+        if (cancelled) return;
+
+        if (soapResult.status === 'fulfilled') {
+          const note = soapResult.value.data;
+          setSoapNote(note ? {
+            subjective: note.subjective ?? '',
+            objective: note.objective ?? '',
+            assessment: note.assessment ?? '',
+            plan: note.plan ?? '',
+          } : blankSoapNote);
+        } else if (soapResult.reason?.status !== 404) {
+          setClinicalError(soapResult.reason?.message ?? 'Unable to load SOAP note');
+        }
+
+        if (historyResult.status === 'fulfilled') {
+          setHistory(historyResult.value.data);
+        } else {
+          setClinicalError((current) => current || historyResult.reason?.message || 'Unable to load patient history');
+        }
+      } finally {
+        if (!cancelled) {
+          setClinicalLoading(false);
+        }
+      }
+    }
+
+    loadClinicalContext();
+    return () => {
+      cancelled = true;
+    };
+  }, [selected?.id, selected?.patientId]);
 
   async function applyFilters(event) {
     event.preventDefault();
@@ -140,6 +210,37 @@ export default function DoctorAppointmentDashboardPage() {
     } finally {
       setActionLoading(false);
     }
+  }
+
+  async function submitSoapNote(event) {
+    event.preventDefault();
+    if (!selected?.id) return;
+
+    setSoapSaving(true);
+    setClinicalError('');
+    setClinicalMessage('');
+    try {
+      const response = await saveAppointmentSoapNote(selected.id, soapNote);
+      const note = response.data;
+      setSoapNote({
+        subjective: note?.subjective ?? '',
+        objective: note?.objective ?? '',
+        assessment: note?.assessment ?? '',
+        plan: note?.plan ?? '',
+      });
+      setClinicalMessage('SOAP note saved.');
+    } catch (err) {
+      setClinicalError(err.message ?? 'Unable to save SOAP note');
+    } finally {
+      setSoapSaving(false);
+    }
+  }
+
+  function updateSoapNote(field, value) {
+    setSoapNote((current) => ({
+      ...current,
+      [field]: value,
+    }));
   }
 
   function actionSet(appointment) {
@@ -278,6 +379,72 @@ export default function DoctorAppointmentDashboardPage() {
           )}
         </aside>
       </div>
+
+      {selected && (
+        <div className={styles.clinicalLayout}>
+          <form className={styles.clinicalPanel} onSubmit={submitSoapNote}>
+            <div className={styles.listHeader}>
+              <h2>SOAP Note</h2>
+              {clinicalLoading && <span>Loading...</span>}
+            </div>
+            {clinicalError && <div className={styles.inlineAlert}>{clinicalError}</div>}
+            {clinicalMessage && <div className={styles.successAlert}>{clinicalMessage}</div>}
+            {['subjective', 'objective', 'assessment', 'plan'].map((field) => (
+              <label key={field}>
+                <span>{field.charAt(0).toUpperCase() + field.slice(1)}</span>
+                <textarea
+                  value={soapNote[field]}
+                  onChange={(event) => updateSoapNote(field, event.target.value)}
+                  maxLength={8000}
+                  rows={3}
+                  disabled={clinicalLoading || soapSaving}
+                  required
+                />
+              </label>
+            ))}
+            <button className={styles.primaryButton} type="submit" disabled={clinicalLoading || soapSaving}>
+              Save SOAP note
+            </button>
+          </form>
+
+          <section className={styles.clinicalPanel}>
+            <div className={styles.listHeader}>
+              <h2>Patient History</h2>
+              <span>{history?.totalAppointments ?? 0} visits</span>
+            </div>
+
+            {clinicalLoading ? (
+              <p className={styles.empty}>Loading patient history...</p>
+            ) : history ? (
+              <>
+                <div className={styles.historyGroup}>
+                  <h3>Appointments</h3>
+                  {history.appointments?.length ? history.appointments.map((appointment) => (
+                    <div className={styles.historyItem} key={appointment.id}>
+                      <strong>{formatDateTime(appointment.scheduledStart)}</strong>
+                      <span>{appointment.status}</span>
+                      <p>{appointment.reason || 'No reason recorded'}</p>
+                    </div>
+                  )) : <p className={styles.empty}>No appointment entries on this page.</p>}
+                </div>
+
+                <div className={styles.historyGroup}>
+                  <h3>Medical Records</h3>
+                  {history.medicalRecords?.length ? history.medicalRecords.map((record) => (
+                    <div className={styles.historyItem} key={record.id}>
+                      <strong>{record.visitDate ?? '-'}</strong>
+                      <span>{record.department || record.doctorName || 'Record'}</span>
+                      <p>{record.diseaseSummary || record.notes || 'No summary recorded'}</p>
+                    </div>
+                  )) : <p className={styles.empty}>No medical records found.</p>}
+                </div>
+              </>
+            ) : (
+              <p className={styles.empty}>Select an appointment to view patient history.</p>
+            )}
+          </section>
+        </div>
+      )}
 
       {modal && (
         <div className={styles.modalBackdrop} role="presentation">

@@ -18,7 +18,12 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 @Configuration
-@EnableConfigurationProperties({JwtProperties.class, AppointmentClientProperties.class, InternalServiceProperties.class})
+@EnableConfigurationProperties({
+        JwtProperties.class,
+        AppointmentClientProperties.class,
+        UserClientProperties.class,
+        InternalServiceProperties.class
+})
 public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,

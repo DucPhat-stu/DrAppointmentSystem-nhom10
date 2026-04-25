@@ -11,6 +11,8 @@ import java.util.UUID;
 public interface AppointmentServiceClient {
     DoctorAppointmentPageResponse findDoctorAppointments(UUID doctorId, LocalDate date, String status, int page, int size);
 
+    DoctorAppointmentPageResponse findDoctorPatientAppointments(UUID doctorId, UUID patientId, int page, int size);
+
     DoctorAppointmentResponse getDoctorAppointment(UUID doctorId, UUID appointmentId);
 
     DoctorAppointmentOwnershipResponse getDoctorAppointmentOwnership(UUID doctorId, UUID appointmentId);

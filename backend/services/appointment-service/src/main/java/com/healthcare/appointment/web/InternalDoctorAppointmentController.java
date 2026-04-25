@@ -56,6 +56,18 @@ public class InternalDoctorAppointmentController {
         );
     }
 
+    @GetMapping("/patients/{patientId}")
+    public ApiResponse<AppointmentPageResponse> patientHistory(
+            @PathVariable UUID doctorId,
+            @PathVariable UUID patientId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return apiResponseFactory.success(
+                "Patient appointment history loaded",
+                appointmentService.findDoctorPatientAppointments(doctorId, patientId, page, size)
+        );
+    }
+
     @GetMapping("/{appointmentId}/ownership")
     public ApiResponse<AppointmentOwnershipResponse> ownership(@PathVariable UUID doctorId,
                                                                @PathVariable UUID appointmentId) {

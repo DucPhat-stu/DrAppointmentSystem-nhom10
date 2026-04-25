@@ -1,5 +1,6 @@
 package com.healthcare.user.config;
 
+import com.healthcare.user.security.InternalServiceTokenFilter;
 import com.healthcare.user.security.JwtAuthenticationFilter;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -17,11 +18,13 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 @Configuration
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties({JwtProperties.class, InternalServiceProperties.class})
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, JwtProperties jwtProperties) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                            JwtProperties jwtProperties,
+                                            InternalServiceProperties internalServiceProperties) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -32,9 +35,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/foundation/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/internal/**").authenticated()
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(
+                        new InternalServiceTokenFilter(internalServiceProperties),
+                        UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(
                         new JwtAuthenticationFilter(jwtProperties),
                         UsernamePasswordAuthenticationFilter.class)

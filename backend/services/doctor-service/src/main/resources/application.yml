@@ -41,6 +41,10 @@ app:
       base-url: ${APPOINTMENT_SERVICE_URL:http://localhost:8084}
       timeout-ms: ${APPOINTMENT_SERVICE_TIMEOUT_MS:2000}
       service-token: ${INTERNAL_SERVICE_TOKEN:change-this-before-shared-environments}
+    user-service:
+      base-url: ${USER_SERVICE_URL:http://localhost:8081}
+      timeout-ms: ${USER_SERVICE_TIMEOUT_MS:2000}
+      service-token: ${INTERNAL_SERVICE_TOKEN:change-this-before-shared-environments}
 
 security:
   jwt:

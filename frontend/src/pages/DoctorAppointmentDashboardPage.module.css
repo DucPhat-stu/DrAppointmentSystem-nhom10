@@ -44,9 +44,29 @@
   color: #fca5a5;
 }
 
+.inlineAlert,
+.successAlert {
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.inlineAlert {
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  background: rgba(239, 68, 68, 0.08);
+  color: #fca5a5;
+}
+
+.successAlert {
+  border: 1px solid rgba(34, 197, 94, 0.26);
+  background: rgba(34, 197, 94, 0.08);
+  color: #86efac;
+}
+
 .filters,
 .list,
-.detail {
+.detail,
+.clinicalPanel {
   padding: 18px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -61,7 +81,8 @@
 }
 
 .filters label,
-.modal label {
+.modal label,
+.clinicalPanel label {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -72,7 +93,8 @@
 
 .filters input,
 .filters select,
-.modal textarea {
+.modal textarea,
+.clinicalPanel textarea {
   min-height: 42px;
   padding: 0 12px;
   border: 1px solid var(--color-border);
@@ -81,7 +103,8 @@
   color: var(--color-text-primary);
 }
 
-.modal textarea {
+.modal textarea,
+.clinicalPanel textarea {
   padding: 12px;
   resize: vertical;
 }
@@ -92,8 +115,15 @@
   gap: 20px;
 }
 
+.clinicalLayout {
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) minmax(360px, 1fr);
+  gap: 20px;
+}
+
 .list,
-.detail {
+.detail,
+.clinicalPanel {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -102,6 +132,45 @@
 .listHeader h2 {
   margin: 0;
   font-size: 18px;
+}
+
+.historyGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.historyGroup h3 {
+  margin: 4px 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+}
+
+.historyItem {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.historyItem strong,
+.historyItem span,
+.historyItem p {
+  overflow-wrap: anywhere;
+}
+
+.historyItem span {
+  color: var(--color-accent);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.historyItem p {
+  margin: 0;
+  color: var(--color-text-secondary);
 }
 
 .listHeader span,
@@ -269,6 +338,7 @@
 
 @media (max-width: 980px) {
   .layout,
+  .clinicalLayout,
   .filters {
     grid-template-columns: 1fr;
   }

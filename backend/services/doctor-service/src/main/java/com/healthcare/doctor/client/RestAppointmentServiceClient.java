@@ -61,6 +61,19 @@ public class RestAppointmentServiceClient implements AppointmentServiceClient {
     }
 
     @Override
+    public DoctorAppointmentPageResponse findDoctorPatientAppointments(UUID doctorId, UUID patientId, int page, int size) {
+        return handle(() -> appointmentRestClient.get()
+                .uri(builder -> builder.path("/internal/doctors/{doctorId}/appointments/patients/{patientId}")
+                        .queryParam("page", page)
+                        .queryParam("size", size)
+                        .build(doctorId, patientId))
+                .header("X-Internal-Service-Token", properties.getServiceToken())
+                .retrieve()
+                .body(PAGE_TYPE)
+                .data());
+    }
+
+    @Override
     public DoctorAppointmentResponse getDoctorAppointment(UUID doctorId, UUID appointmentId) {
         return handle(() -> appointmentRestClient.get()
                 .uri("/internal/doctors/{doctorId}/appointments/{appointmentId}", doctorId, appointmentId)

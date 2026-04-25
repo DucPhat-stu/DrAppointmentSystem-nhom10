@@ -103,3 +103,22 @@ export function cancelDoctorAppointment(appointmentId, idempotencyKey, reason) {
     body: JSON.stringify({ reason }),
   });
 }
+
+export function fetchAppointmentSoapNote(appointmentId) {
+  return doctorApi(`/api/v1/doctors/appointments/${appointmentId}/soap`);
+}
+
+export function saveAppointmentSoapNote(appointmentId, payload) {
+  return doctorApi(`/api/v1/doctors/appointments/${appointmentId}/soap`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function fetchPatientHistory(patientId, { page = 0, size = 10 } = {}) {
+  const params = new URLSearchParams({
+    page: String(page),
+    size: String(size),
+  });
+  return doctorApi(`/api/v1/doctors/patients/${patientId}/history?${params.toString()}`);
+}
