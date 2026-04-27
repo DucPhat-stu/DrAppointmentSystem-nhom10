@@ -8,6 +8,11 @@ spring:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/doctor_db}
     username: ${DB_USERNAME:healthcare}
     password: ${DB_PASSWORD:healthcare}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
   jpa:
     hibernate:
       ddl-auto: none
@@ -33,7 +38,7 @@ app:
     description: Doctor availability and timeslot foundation.
     database: doctor_db
     rabbitmq-enabled: false
-    redis-enabled: false
+    redis-enabled: true
   internal:
     service-token: ${INTERNAL_SERVICE_TOKEN:change-this-before-shared-environments}
   clients:
@@ -45,6 +50,9 @@ app:
       base-url: ${USER_SERVICE_URL:http://localhost:8081}
       timeout-ms: ${USER_SERVICE_TIMEOUT_MS:2000}
       service-token: ${INTERNAL_SERVICE_TOKEN:change-this-before-shared-environments}
+  available-slots:
+    cache:
+      ttl-seconds: ${AVAILABLE_SLOTS_CACHE_TTL_SECONDS:300}
 
 security:
   jwt:

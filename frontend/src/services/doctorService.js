@@ -8,6 +8,11 @@ export function fetchDoctorDetail(doctorId) {
   return doctorApi(`/api/v1/doctors/${doctorId}`);
 }
 
+export function fetchAvailableSlots(doctorId, date) {
+  const params = new URLSearchParams({ date });
+  return doctorApi(`/api/v1/doctors/${doctorId}/available-slots?${params.toString()}`);
+}
+
 export function fetchDoctorSchedules() {
   return doctorApi('/api/v1/doctors/schedules');
 }

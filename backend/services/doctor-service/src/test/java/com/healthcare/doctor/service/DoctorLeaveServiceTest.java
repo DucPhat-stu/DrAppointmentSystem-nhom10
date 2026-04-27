@@ -41,11 +41,14 @@ class DoctorLeaveServiceTest {
     @Mock
     private TimeSlotJpaRepository timeSlotRepository;
 
+    @Mock
+    private AvailableSlotCache availableSlotCache;
+
     private DoctorLeaveService service;
 
     @BeforeEach
     void setUp() {
-        service = new DoctorLeaveService(leaveRepository, timeSlotRepository, CLOCK);
+        service = new DoctorLeaveService(leaveRepository, timeSlotRepository, availableSlotCache, CLOCK);
     }
 
     @Test
@@ -89,6 +92,8 @@ class DoctorLeaveServiceTest {
                 TimeSlotStatus.AVAILABLE,
                 TimeSlotStatus.BLOCKED
         );
+        verify(availableSlotCache).evict(leave.getDoctorId(), LocalDate.parse("2026-06-10"));
+        verify(availableSlotCache).evict(leave.getDoctorId(), LocalDate.parse("2026-06-11"));
     }
 
     @Test

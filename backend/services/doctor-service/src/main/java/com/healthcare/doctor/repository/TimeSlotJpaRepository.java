@@ -18,6 +18,22 @@ public interface TimeSlotJpaRepository extends JpaRepository<TimeSlotEntity, UUI
     boolean existsByScheduleIdAndStatus(UUID scheduleId, TimeSlotStatus status);
 
     @Query("""
+            select slot
+            from TimeSlotEntity slot
+            where slot.status = :status
+              and slot.scheduleId in (
+                  select schedule.id
+                  from DoctorScheduleEntity schedule
+                  where schedule.doctorId = :doctorId
+                    and schedule.date = :date
+              )
+            order by slot.startTime asc
+            """)
+    List<TimeSlotEntity> findAllByDoctorIdAndDateAndStatus(@Param("doctorId") UUID doctorId,
+                                                           @Param("date") LocalDate date,
+                                                           @Param("status") TimeSlotStatus status);
+
+    @Query("""
             select count(slot) > 0
             from TimeSlotEntity slot
             where slot.scheduleId = :scheduleId

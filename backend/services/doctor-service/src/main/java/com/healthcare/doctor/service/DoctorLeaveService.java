@@ -29,13 +29,16 @@ public class DoctorLeaveService {
 
     private final DoctorLeaveJpaRepository leaveRepository;
     private final TimeSlotJpaRepository timeSlotRepository;
+    private final AvailableSlotCache availableSlotCache;
     private final Clock clock;
 
     public DoctorLeaveService(DoctorLeaveJpaRepository leaveRepository,
                               TimeSlotJpaRepository timeSlotRepository,
+                              AvailableSlotCache availableSlotCache,
                               Clock clock) {
         this.leaveRepository = leaveRepository;
         this.timeSlotRepository = timeSlotRepository;
+        this.availableSlotCache = availableSlotCache;
         this.clock = clock;
     }
 
@@ -113,6 +116,7 @@ public class DoctorLeaveService {
                 TimeSlotStatus.AVAILABLE,
                 TimeSlotStatus.BLOCKED
         );
+        evictAvailableSlotCache(saved.getDoctorId(), saved.getStartDate(), saved.getEndDate());
         return toResponse(saved);
     }
 
@@ -149,6 +153,14 @@ public class DoctorLeaveService {
             return null;
         }
         return reason.trim();
+    }
+
+    private void evictAvailableSlotCache(UUID doctorId, LocalDate startDate, LocalDate endDate) {
+        LocalDate current = startDate;
+        while (current.isBefore(endDate)) {
+            availableSlotCache.evict(doctorId, current);
+            current = current.plusDays(1);
+        }
     }
 
     private DoctorLeaveResponse toResponse(DoctorLeaveEntity entity) {

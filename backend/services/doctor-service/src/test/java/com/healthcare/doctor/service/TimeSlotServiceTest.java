@@ -39,11 +39,14 @@ class TimeSlotServiceTest {
     @Mock
     private DoctorScheduleJpaRepository scheduleRepository;
 
+    @Mock
+    private AvailableSlotCache availableSlotCache;
+
     private TimeSlotService service;
 
     @BeforeEach
     void setUp() {
-        service = new TimeSlotService(timeSlotRepository, scheduleRepository, FIXED_CLOCK);
+        service = new TimeSlotService(timeSlotRepository, scheduleRepository, availableSlotCache, FIXED_CLOCK);
     }
 
     @Test

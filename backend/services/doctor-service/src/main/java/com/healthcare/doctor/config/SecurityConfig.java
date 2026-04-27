@@ -22,6 +22,7 @@ import java.util.List;
         JwtProperties.class,
         AppointmentClientProperties.class,
         UserClientProperties.class,
+        AvailableSlotCacheProperties.class,
         InternalServiceProperties.class
 })
 public class SecurityConfig {

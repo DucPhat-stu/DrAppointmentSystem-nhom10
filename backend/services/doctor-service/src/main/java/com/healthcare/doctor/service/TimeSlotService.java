@@ -23,13 +23,16 @@ import java.util.UUID;
 public class TimeSlotService {
     private final TimeSlotJpaRepository timeSlotRepository;
     private final DoctorScheduleJpaRepository scheduleRepository;
+    private final AvailableSlotCache availableSlotCache;
     private final Clock clock;
 
     public TimeSlotService(TimeSlotJpaRepository timeSlotRepository,
                            DoctorScheduleJpaRepository scheduleRepository,
+                           AvailableSlotCache availableSlotCache,
                            Clock clock) {
         this.timeSlotRepository = timeSlotRepository;
         this.scheduleRepository = scheduleRepository;
+        this.availableSlotCache = availableSlotCache;
         this.clock = clock;
     }
 
@@ -59,6 +62,7 @@ public class TimeSlotService {
                     endTime,
                     clock
             ));
+            availableSlotCache.evict(schedule.getDoctorId(), schedule.getDate());
             return toResponse(saved);
         } catch (DataIntegrityViolationException exception) {
             throw new ApiException(ErrorCode.CONFLICT, "Time slot overlaps with an existing slot");
@@ -86,7 +90,9 @@ public class TimeSlotService {
         slot.setStartTime(startTime);
         slot.setEndTime(endTime);
         try {
-            return toResponse(timeSlotRepository.save(slot));
+            TimeSlotResponse response = toResponse(timeSlotRepository.save(slot));
+            availableSlotCache.evict(schedule.getDoctorId(), schedule.getDate());
+            return response;
         } catch (DataIntegrityViolationException exception) {
             throw new ApiException(ErrorCode.CONFLICT, "Time slot overlaps with an existing slot");
         }
@@ -103,13 +109,17 @@ public class TimeSlotService {
             throw new ApiException(ErrorCode.CONFLICT, "Booked time slots cannot be deleted");
         }
         timeSlotRepository.delete(slot);
+        availableSlotCache.evict(schedule.getDoctorId(), schedule.getDate());
     }
 
     @Transactional
     public TimeSlotResponse updateStatus(UUID slotId, TimeSlotStatus status) {
         TimeSlotEntity slot = findSlot(slotId);
         slot.setStatus(status);
-        return toResponse(timeSlotRepository.save(slot));
+        TimeSlotResponse response = toResponse(timeSlotRepository.save(slot));
+        scheduleRepository.findById(slot.getScheduleId())
+                .ifPresent(schedule -> availableSlotCache.evict(schedule.getDoctorId(), schedule.getDate()));
+        return response;
     }
 
     private DoctorScheduleEntity findOwnedSchedule(UUID doctorId, UUID scheduleId) {
