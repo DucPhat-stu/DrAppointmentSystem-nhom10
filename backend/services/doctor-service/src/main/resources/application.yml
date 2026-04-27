@@ -13,6 +13,7 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+      timeout: ${REDIS_TIMEOUT:500ms}
   jpa:
     hibernate:
       ddl-auto: none
@@ -52,6 +53,7 @@ app:
       service-token: ${INTERNAL_SERVICE_TOKEN:change-this-before-shared-environments}
   available-slots:
     cache:
+      enabled: ${AVAILABLE_SLOTS_CACHE_ENABLED:true}
       ttl-seconds: ${AVAILABLE_SLOTS_CACHE_TTL_SECONDS:300}
 
 security:

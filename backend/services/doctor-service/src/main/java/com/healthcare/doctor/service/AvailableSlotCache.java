@@ -32,6 +32,9 @@ public class AvailableSlotCache {
     }
 
     public Optional<List<AvailableSlotResponse>> get(UUID doctorId, LocalDate date) {
+        if (!properties.isEnabled()) {
+            return Optional.empty();
+        }
         try {
             String raw = redisTemplate.opsForValue().get(key(doctorId, date));
             if (raw == null || raw.isBlank()) {
@@ -47,6 +50,9 @@ public class AvailableSlotCache {
     }
 
     public void put(UUID doctorId, LocalDate date, List<AvailableSlotResponse> slots) {
+        if (!properties.isEnabled()) {
+            return;
+        }
         try {
             redisTemplate.opsForValue().set(
                     key(doctorId, date),
@@ -59,6 +65,9 @@ public class AvailableSlotCache {
     }
 
     public void evict(UUID doctorId, LocalDate date) {
+        if (!properties.isEnabled()) {
+            return;
+        }
         try {
             redisTemplate.delete(key(doctorId, date));
         } catch (Exception ignored) {

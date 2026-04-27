@@ -13,6 +13,12 @@ import java.util.List;
 import java.util.UUID;
 
 public interface TimeSlotJpaRepository extends JpaRepository<TimeSlotEntity, UUID> {
+    interface DoctorAvailabilityProjection {
+        UUID getDoctorId();
+
+        long getAvailableSlots();
+    }
+
     List<TimeSlotEntity> findAllByScheduleIdOrderByStartTimeAsc(UUID scheduleId);
 
     boolean existsByScheduleIdAndStatus(UUID scheduleId, TimeSlotStatus status);
@@ -32,6 +38,18 @@ public interface TimeSlotJpaRepository extends JpaRepository<TimeSlotEntity, UUI
     List<TimeSlotEntity> findAllByDoctorIdAndDateAndStatus(@Param("doctorId") UUID doctorId,
                                                            @Param("date") LocalDate date,
                                                            @Param("status") TimeSlotStatus status);
+
+    @Query("""
+            select schedule.doctorId as doctorId, count(slot.id) as availableSlots
+            from TimeSlotEntity slot
+            join DoctorScheduleEntity schedule on schedule.id = slot.scheduleId
+            where schedule.date = :date
+              and slot.status = :status
+            group by schedule.doctorId
+            order by schedule.doctorId asc
+            """)
+    List<DoctorAvailabilityProjection> findDoctorAvailabilityByDate(@Param("date") LocalDate date,
+                                                                    @Param("status") TimeSlotStatus status);
 
     @Query("""
             select count(slot) > 0

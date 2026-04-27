@@ -6,6 +6,8 @@ import com.healthcare.appointment.dto.AppointmentActionRequest;
 import com.healthcare.appointment.dto.AppointmentOwnershipResponse;
 import com.healthcare.appointment.dto.AppointmentPageResponse;
 import com.healthcare.appointment.dto.AppointmentResponse;
+import com.healthcare.appointment.dto.CreateAppointmentRequest;
+import com.healthcare.appointment.dto.DoctorSlotResponse;
 import com.healthcare.appointment.entity.AppointmentActionIdempotencyEntity;
 import com.healthcare.appointment.entity.AppointmentEntity;
 import com.healthcare.appointment.events.AppointmentEventPublisher;
@@ -30,6 +32,11 @@ import java.util.UUID;
 
 @Service
 public class AppointmentService {
+    private static final List<AppointmentStatus> ACTIVE_SLOT_STATUSES = List.of(
+            AppointmentStatus.PENDING,
+            AppointmentStatus.CONFIRMED
+    );
+
     private final AppointmentJpaRepository appointmentRepository;
     private final AppointmentActionIdempotencyJpaRepository idempotencyRepository;
     private final AppointmentEventPublisher eventPublisher;
@@ -43,6 +50,46 @@ public class AppointmentService {
         this.idempotencyRepository = idempotencyRepository;
         this.eventPublisher = eventPublisher;
         this.doctorSlotClient = doctorSlotClient;
+    }
+
+    @Transactional
+    public AppointmentResponse create(UUID patientId, CreateAppointmentRequest request) {
+        DoctorSlotResponse slot = doctorSlotClient.getSlot(request.slotId());
+        if (!request.doctorId().equals(slot.doctorId())) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Slot does not belong to the selected doctor");
+        }
+        if (!"AVAILABLE".equals(slot.status())) {
+            throw new ApiException(ErrorCode.CONFLICT, "Selected slot is no longer available");
+        }
+        if (appointmentRepository.existsBySlotIdAndStatusIn(request.slotId(), ACTIVE_SLOT_STATUSES)) {
+            throw new ApiException(ErrorCode.CONFLICT, "Selected slot is already booked");
+        }
+
+        AppointmentEntity appointment = new AppointmentEntity();
+        appointment.setId(UUID.randomUUID());
+        appointment.setDoctorId(request.doctorId());
+        appointment.setPatientId(patientId);
+        appointment.setSlotId(request.slotId());
+        appointment.setScheduledStart(slot.startTime());
+        appointment.setScheduledEnd(slot.endTime());
+        appointment.setStatus(AppointmentStatus.PENDING);
+        appointment.setReason(normalizeReason(request.reason()));
+
+        try {
+            AppointmentEntity saved = appointmentRepository.save(appointment);
+            doctorSlotClient.updateSlotStatus(saved.getSlotId(), "BOOKED");
+            eventPublisher.publishStatusChanged("APPOINTMENT_REQUESTED", saved);
+            return toResponse(saved);
+        } catch (DataIntegrityViolationException exception) {
+            throw new ApiException(ErrorCode.CONFLICT, "Selected slot is already booked");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public AppointmentResponse getPatientAppointment(UUID patientId, UUID appointmentId) {
+        AppointmentEntity appointment = appointmentRepository.findByIdAndPatientId(appointmentId, patientId)
+                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, "Appointment not found"));
+        return toResponse(appointment);
     }
 
     @Transactional(readOnly = true)
@@ -195,6 +242,13 @@ public class AppointmentService {
         } catch (DataIntegrityViolationException ignored) {
             // Duplicate idempotency keys are safe because state transitions are idempotent above.
         }
+    }
+
+    private String normalizeReason(String reason) {
+        if (reason == null || reason.isBlank()) {
+            return null;
+        }
+        return reason.trim();
     }
 
     private AppointmentEntity findOwned(UUID doctorId, UUID appointmentId) {

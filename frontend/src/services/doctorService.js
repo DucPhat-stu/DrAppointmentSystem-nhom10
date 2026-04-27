@@ -1,7 +1,12 @@
 import { doctorApi } from './httpClient.js';
 
 export function fetchDoctors() {
-  return doctorApi('/api/v1/doctors');
+  return doctorApi(`/api/v1/doctors?date=${new Date().toISOString().slice(0, 10)}`);
+}
+
+export function fetchAvailableDoctors(date) {
+  const params = new URLSearchParams({ date });
+  return doctorApi(`/api/v1/doctors?${params.toString()}`);
 }
 
 export function fetchDoctorDetail(doctorId) {

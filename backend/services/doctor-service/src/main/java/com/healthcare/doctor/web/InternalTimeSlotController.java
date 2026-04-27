@@ -1,11 +1,13 @@
 package com.healthcare.doctor.web;
 
+import com.healthcare.doctor.dto.InternalTimeSlotResponse;
 import com.healthcare.doctor.dto.TimeSlotResponse;
 import com.healthcare.doctor.dto.UpdateTimeSlotStatusRequest;
 import com.healthcare.doctor.service.TimeSlotService;
 import com.healthcare.shared.api.ApiResponse;
 import com.healthcare.shared.common.web.ApiResponseFactory;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,6 +25,11 @@ public class InternalTimeSlotController {
     public InternalTimeSlotController(TimeSlotService timeSlotService, ApiResponseFactory apiResponseFactory) {
         this.timeSlotService = timeSlotService;
         this.apiResponseFactory = apiResponseFactory;
+    }
+
+    @GetMapping("/{slotId}")
+    public ApiResponse<InternalTimeSlotResponse> get(@PathVariable UUID slotId) {
+        return apiResponseFactory.success("Time slot loaded", timeSlotService.getInternal(slotId));
     }
 
     @PutMapping("/{slotId}/status")

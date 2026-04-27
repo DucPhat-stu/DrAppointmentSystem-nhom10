@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { createAppointment } from '../services/appointmentService.js';
 import { fetchAvailableSlots } from '../services/doctorService.js';
 import styles from './BookAppointmentPage.module.css';
 
@@ -25,8 +26,12 @@ export default function BookAppointmentPage() {
   const [date, setDate] = useState(searchParams.get('date') ?? today());
   const [slots, setSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
+  const [reason, setReason] = useState('');
+  const [createdAppointment, setCreatedAppointment] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [booking, setBooking] = useState(false);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
 
   const canLoad = useMemo(() => looksLikeUuid(doctorId) && !!date, [doctorId, date]);
 
@@ -40,6 +45,8 @@ export default function BookAppointmentPage() {
 
     setLoading(true);
     setError('');
+    setMessage('');
+    setCreatedAppointment(null);
     setSelectedSlot(null);
     try {
       const response = await fetchAvailableSlots(nextDoctorId, nextDate);
@@ -65,6 +72,29 @@ export default function BookAppointmentPage() {
     loadSlots();
   }
 
+  async function submitAppointment(event) {
+    event.preventDefault();
+    if (!selectedSlot) return;
+
+    setBooking(true);
+    setError('');
+    setMessage('');
+    try {
+      const response = await createAppointment({
+        doctorId,
+        slotId: selectedSlot.id,
+        reason,
+      });
+      await loadSlots(doctorId, date);
+      setCreatedAppointment(response.data);
+      setMessage('Appointment request created.');
+    } catch (err) {
+      setError(err.message ?? 'Unable to create appointment');
+    } finally {
+      setBooking(false);
+    }
+  }
+
   return (
     <section className={styles.page}>
       <div className={styles.header}>
@@ -78,6 +108,7 @@ export default function BookAppointmentPage() {
       </div>
 
       {error && <div className={styles.alert}>{error}</div>}
+      {message && <div className={styles.success}>{message}</div>}
 
       <form className={styles.filters} onSubmit={applyFilters}>
         <label>
@@ -133,7 +164,7 @@ export default function BookAppointmentPage() {
           )}
         </section>
 
-        <aside className={styles.panel}>
+        <form className={styles.panel} onSubmit={submitAppointment}>
           <div className={styles.panelHeader}>
             <h2>Selection</h2>
             <span>{selectedSlot ? 'Ready' : 'None'}</span>
@@ -161,7 +192,26 @@ export default function BookAppointmentPage() {
           ) : (
             <p className={styles.empty}>Select a slot to prepare the appointment details.</p>
           )}
-        </aside>
+          <label className={styles.reasonField}>
+            <span>Reason</span>
+            <textarea
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              maxLength={500}
+              rows={4}
+              disabled={!selectedSlot || booking}
+            />
+          </label>
+          <button className={styles.primaryButton} type="submit" disabled={!selectedSlot || booking}>
+            Request appointment
+          </button>
+          {createdAppointment && (
+            <div className={styles.createdBox}>
+              <strong>Appointment {createdAppointment.status}</strong>
+              <span>{createdAppointment.id}</span>
+            </div>
+          )}
+        </form>
       </div>
     </section>
   );

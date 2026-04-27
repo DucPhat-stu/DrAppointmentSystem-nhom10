@@ -3,6 +3,8 @@ package com.healthcare.appointment.service;
 import com.healthcare.appointment.client.DoctorSlotClient;
 import com.healthcare.appointment.domain.AppointmentStatus;
 import com.healthcare.appointment.dto.AppointmentActionRequest;
+import com.healthcare.appointment.dto.CreateAppointmentRequest;
+import com.healthcare.appointment.dto.DoctorSlotResponse;
 import com.healthcare.appointment.entity.AppointmentEntity;
 import com.healthcare.appointment.events.AppointmentEventPublisher;
 import com.healthcare.appointment.repository.AppointmentActionIdempotencyJpaRepository;
@@ -16,12 +18,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -60,6 +64,51 @@ class AppointmentServiceTest {
         assertThat(response.status()).isEqualTo(AppointmentStatus.CONFIRMED);
         verify(eventPublisher).publishStatusChanged("APPOINTMENT_CONFIRMED", appointment);
         verify(doctorSlotClient).updateSlotStatus(appointment.getSlotId(), "BOOKED");
+    }
+
+    @Test
+    void createBooksAvailableDoctorSlotForPatient() {
+        UUID patientId = UUID.randomUUID();
+        UUID doctorId = UUID.randomUUID();
+        UUID slotId = UUID.randomUUID();
+        when(doctorSlotClient.getSlot(slotId)).thenReturn(new DoctorSlotResponse(
+                slotId,
+                doctorId,
+                UUID.randomUUID(),
+                OffsetDateTime.parse("2026-06-25T08:00:00Z"),
+                OffsetDateTime.parse("2026-06-25T09:00:00Z"),
+                "AVAILABLE"
+        ));
+        when(appointmentRepository.existsBySlotIdAndStatusIn(slotId, List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED)))
+                .thenReturn(false);
+        when(appointmentRepository.save(any(AppointmentEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var response = service.create(patientId, new CreateAppointmentRequest(doctorId, slotId, "Checkup"));
+
+        assertThat(response.patientId()).isEqualTo(patientId);
+        assertThat(response.status()).isEqualTo(AppointmentStatus.PENDING);
+        verify(doctorSlotClient).updateSlotStatus(slotId, "BOOKED");
+        verify(eventPublisher).publishStatusChanged(eq("APPOINTMENT_REQUESTED"), any(AppointmentEntity.class));
+    }
+
+    @Test
+    void createRejectsUnavailableSlot() {
+        UUID doctorId = UUID.randomUUID();
+        UUID slotId = UUID.randomUUID();
+        when(doctorSlotClient.getSlot(slotId)).thenReturn(new DoctorSlotResponse(
+                slotId,
+                doctorId,
+                UUID.randomUUID(),
+                OffsetDateTime.parse("2026-06-25T08:00:00Z"),
+                OffsetDateTime.parse("2026-06-25T09:00:00Z"),
+                "BOOKED"
+        ));
+
+        assertThatThrownBy(() -> service.create(UUID.randomUUID(), new CreateAppointmentRequest(doctorId, slotId, "Checkup")))
+                .isInstanceOf(ApiException.class)
+                .extracting(exception -> ((ApiException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.CONFLICT);
+        verify(appointmentRepository, never()).save(any());
     }
 
     @Test

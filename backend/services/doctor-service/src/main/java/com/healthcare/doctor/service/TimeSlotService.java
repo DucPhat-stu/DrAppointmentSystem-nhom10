@@ -1,6 +1,7 @@
 package com.healthcare.doctor.service;
 
 import com.healthcare.doctor.domain.TimeSlotStatus;
+import com.healthcare.doctor.dto.InternalTimeSlotResponse;
 import com.healthcare.doctor.dto.TimeSlotRequest;
 import com.healthcare.doctor.dto.TimeSlotResponse;
 import com.healthcare.doctor.entity.DoctorScheduleEntity;
@@ -120,6 +121,21 @@ public class TimeSlotService {
         scheduleRepository.findById(slot.getScheduleId())
                 .ifPresent(schedule -> availableSlotCache.evict(schedule.getDoctorId(), schedule.getDate()));
         return response;
+    }
+
+    @Transactional(readOnly = true)
+    public InternalTimeSlotResponse getInternal(UUID slotId) {
+        TimeSlotEntity slot = findSlot(slotId);
+        DoctorScheduleEntity schedule = scheduleRepository.findById(slot.getScheduleId())
+                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, "Doctor schedule not found"));
+        return new InternalTimeSlotResponse(
+                slot.getId(),
+                schedule.getDoctorId(),
+                schedule.getId(),
+                slot.getStartTime(),
+                slot.getEndTime(),
+                slot.getStatus()
+        );
     }
 
     private DoctorScheduleEntity findOwnedSchedule(UUID doctorId, UUID scheduleId) {

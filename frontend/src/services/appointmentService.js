@@ -1,13 +1,12 @@
-import { httpClient } from './httpClient.js';
+import { appointmentApi } from './httpClient.js';
 
 export function createAppointment(payload) {
-  return httpClient('/appointments', {
+  return appointmentApi('/api/v1/appointments', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
 }
 
 export function fetchAppointment(appointmentId) {
-  return httpClient(`/appointments/${appointmentId}`);
+  return appointmentApi(`/api/v1/appointments/${appointmentId}`);
 }
-
