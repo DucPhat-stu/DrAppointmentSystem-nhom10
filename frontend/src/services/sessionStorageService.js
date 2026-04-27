@@ -9,6 +9,12 @@ function getStorage() {
   return window.sessionStorage;
 }
 
+function notifySessionUpdated(session) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('healthcare:session-updated', { detail: session }));
+  }
+}
+
 /**
  * Load session from storage.
  * @returns {{ email, role, accessToken, refreshToken, fullName } | null}
@@ -51,5 +57,6 @@ export function updateAccessToken(newAccessToken) {
   if (!session) return null;
   session.accessToken = newAccessToken;
   persistSession(session);
+  notifySessionUpdated(session);
   return session;
 }

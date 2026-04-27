@@ -32,9 +32,16 @@ export function AppProviders({ children }) {
     function handleSessionExpired() {
       setSession(null);
     }
+    function handleSessionUpdated(event) {
+      setSession(event.detail ?? loadSession());
+    }
 
     window.addEventListener('healthcare:session-expired', handleSessionExpired);
-    return () => window.removeEventListener('healthcare:session-expired', handleSessionExpired);
+    window.addEventListener('healthcare:session-updated', handleSessionUpdated);
+    return () => {
+      window.removeEventListener('healthcare:session-expired', handleSessionExpired);
+      window.removeEventListener('healthcare:session-updated', handleSessionUpdated);
+    };
   }, []);
 
   /**

@@ -23,6 +23,12 @@ spring:
   rabbitmq:
     addresses: ${RABBITMQ_URL:amqp://healthcare:healthcare@localhost:5673}
 
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:true}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:true}
+
 management:
   endpoints:
     web:
