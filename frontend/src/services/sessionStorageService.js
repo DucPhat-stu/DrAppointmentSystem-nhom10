@@ -48,7 +48,8 @@ export function clearSession() {
  */
 export function updateAccessToken(newAccessToken) {
   const session = loadSession();
-  if (!session) return;
+  if (!session) return null;
   session.accessToken = newAccessToken;
   persistSession(session);
+  return session;
 }

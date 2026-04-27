@@ -1,6 +1,8 @@
 /* =========================================================
-   HTTP Client – Auto-attach JWT, parse API envelope, handle errors
+   HTTP Client - Auto-attach JWT, refresh once on 401, parse API envelope
    ========================================================= */
+
+import { clearSession, loadSession, updateAccessToken } from './sessionStorageService.js';
 
 const SERVICE_URLS = {
   auth: import.meta.env.VITE_AUTH_URL ?? 'http://localhost:8086',
@@ -10,41 +12,13 @@ const SERVICE_URLS = {
   notification: import.meta.env.VITE_NOTIFICATION_URL ?? 'http://localhost:8085',
 };
 
-/**
- * Build full URL from service name + path.
- * Example: buildUrl('auth', '/api/v1/auth/login')
- */
 function buildUrl(service, path) {
   const base = SERVICE_URLS[service] ?? SERVICE_URLS.auth;
   return `${base}${path}`;
 }
 
-/**
- * Get current access token from storage.
- */
-function getAccessToken() {
-  try {
-    const raw = sessionStorage.getItem('healthcare.session');
-    if (!raw) return null;
-    const session = JSON.parse(raw);
-    return session?.accessToken ?? null;
-  } catch {
-    return null;
-  }
-}
+let refreshPromise = null;
 
-function getSession() {
-  try {
-    const raw = sessionStorage.getItem('healthcare.session');
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Custom API error with structured data from backend envelope.
- */
 export class ApiError extends Error {
   constructor(status, errorCode, message, details = []) {
     super(message);
@@ -55,56 +29,103 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * Main HTTP client.
- *
- * @param {string} service - Service name: 'auth' | 'user' | 'doctor' | 'appointment' | 'notification'
- * @param {string} path - API path, e.g. '/api/v1/auth/login'
- * @param {object} options - fetch options (method, body, headers, etc.)
- * @param {boolean} options.skipAuth - skip auto-attaching JWT
- * @returns {Promise<object>} - parsed response body (envelope data, or full envelope)
- */
-export async function httpClient(service, path, options = {}) {
-  const { skipAuth = false, ...fetchOptions } = options;
-
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(fetchOptions.headers ?? {}),
-  };
-
-  // Auto-attach JWT unless skipped
-  if (!skipAuth) {
-    const session = getSession();
-    const token = session?.accessToken ?? getAccessToken();
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+function notifySessionExpired() {
+  clearSession();
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('healthcare:session-expired'));
   }
+}
 
-  const url = buildUrl(service, path);
-
-  const response = await fetch(url, {
-    ...fetchOptions,
-    headers,
-  });
-
-  // Handle empty response (204 No Content)
+async function parseResponse(response) {
   if (response.status === 204) {
     return { success: true, data: null };
   }
 
-  let body;
   try {
-    body = await response.json();
+    return await response.json();
   } catch {
     if (!response.ok) {
       throw new ApiError(response.status, 'NETWORK_ERROR', `HTTP ${response.status}`);
     }
     return { success: true, data: null };
   }
+}
 
-  // Handle API error envelope
+async function refreshAccessToken() {
+  const session = loadSession();
+  if (!session?.refreshToken || session.refreshToken === 'mock-refresh-token') {
+    return null;
+  }
+
+  if (!refreshPromise) {
+    refreshPromise = fetch(buildUrl('auth', '/api/v1/auth/refresh'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: session.refreshToken }),
+    })
+      .then(async (response) => {
+        const body = await parseResponse(response);
+        if (!response.ok || body.success === false || !body.data?.accessToken) {
+          throw new ApiError(
+            response.status,
+            body.errorCode ?? 'UNAUTHORIZED',
+            body.message ?? 'Session expired',
+            body.details ?? [],
+          );
+        }
+        updateAccessToken(body.data.accessToken);
+        return body.data.accessToken;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+
+  return refreshPromise;
+}
+
+async function send(service, path, fetchOptions, headers) {
+  return fetch(buildUrl(service, path), {
+    ...fetchOptions,
+    headers,
+  });
+}
+
+export async function httpClient(service, path, options = {}) {
+  const { skipAuth = false, retryOnUnauthorized = true, ...fetchOptions } = options;
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(fetchOptions.headers ?? {}),
+  };
+
+  if (!skipAuth) {
+    const token = loadSession()?.accessToken;
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
+  let response = await send(service, path, fetchOptions, headers);
+
+  if (response.status === 401 && !skipAuth && retryOnUnauthorized && service !== 'auth') {
+    try {
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        headers.Authorization = `Bearer ${newToken}`;
+        response = await send(service, path, fetchOptions, headers);
+      }
+    } catch {
+      notifySessionExpired();
+    }
+  }
+
+  const body = await parseResponse(response);
+
   if (!response.ok || body.success === false) {
+    if (response.status === 401 && !skipAuth) {
+      notifySessionExpired();
+    }
     throw new ApiError(
       response.status,
       body.errorCode ?? 'UNKNOWN_ERROR',
@@ -116,9 +137,6 @@ export async function httpClient(service, path, options = {}) {
   return body;
 }
 
-/**
- * Shorthand helpers per service.
- */
 export const authApi = (path, options) => httpClient('auth', path, options);
 export const userApi = (path, options) => httpClient('user', path, options);
 export const doctorApi = (path, options) => httpClient('doctor', path, options);

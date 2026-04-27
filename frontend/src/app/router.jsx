@@ -14,6 +14,7 @@ import DoctorSchedulePage from '../pages/DoctorSchedulePage.jsx';
 import DoctorAppointmentDashboardPage from '../pages/DoctorAppointmentDashboardPage.jsx';
 import DoctorLeavePage from '../pages/DoctorLeavePage.jsx';
 import AdminLeavePage from '../pages/AdminLeavePage.jsx';
+import RouteFallbackPage from '../pages/RouteFallbackPage.jsx';
 
 function ProtectedLayout() {
   const { session } = useAuth();
@@ -29,21 +30,40 @@ function ProtectedLayout() {
   );
 }
 
+function normalizeRole(role) {
+  return role?.replace(/^ROLE_/, '').toUpperCase();
+}
+
+function RoleGate({ allowedRoles, children }) {
+  const { session } = useAuth();
+  const role = normalizeRole(session?.role);
+
+  if (!allowedRoles.includes(role)) {
+    return <Navigate to="/doctors" replace />;
+  }
+
+  return children;
+}
+
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <HomePage />,
+    errorElement: <RouteFallbackPage />,
   },
   {
     path: '/login',
     element: <LoginPage />,
+    errorElement: <RouteFallbackPage />,
   },
   {
     path: '/register',
     element: <RegisterPage />,
+    errorElement: <RouteFallbackPage />,
   },
   {
     element: <ProtectedLayout />,
+    errorElement: <RouteFallbackPage />,
     children: [
       {
         path: '/doctors',
@@ -71,19 +91,39 @@ export const router = createBrowserRouter([
       },
       {
         path: '/doctor/schedules',
-        element: <DoctorSchedulePage />,
+        element: (
+          <RoleGate allowedRoles={['DOCTOR', 'ADMIN']}>
+            <DoctorSchedulePage />
+          </RoleGate>
+        ),
       },
       {
         path: '/doctor/appointments',
-        element: <DoctorAppointmentDashboardPage />,
+        element: (
+          <RoleGate allowedRoles={['DOCTOR', 'ADMIN']}>
+            <DoctorAppointmentDashboardPage />
+          </RoleGate>
+        ),
       },
       {
         path: '/doctor/leaves',
-        element: <DoctorLeavePage />,
+        element: (
+          <RoleGate allowedRoles={['DOCTOR', 'ADMIN']}>
+            <DoctorLeavePage />
+          </RoleGate>
+        ),
       },
       {
         path: '/admin/leaves',
-        element: <AdminLeavePage />,
+        element: (
+          <RoleGate allowedRoles={['ADMIN']}>
+            <AdminLeavePage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: '*',
+        element: <RouteFallbackPage />,
       },
     ],
   },

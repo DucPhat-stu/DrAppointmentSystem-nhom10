@@ -5,6 +5,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.MDC;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -27,12 +28,24 @@ public class RequestContextFilter extends OncePerRequestFilter {
         }
 
         requestMetadataContext.open(requestId);
+        MDC.put("traceId", requestId);
+        putIfPresent("userId", request.getHeader(ForwardedHeaders.USER_ID));
+        putIfPresent("role", request.getHeader(ForwardedHeaders.USER_ROLE));
         response.setHeader(ForwardedHeaders.REQUEST_ID, requestId);
 
         try {
             filterChain.doFilter(request, response);
         } finally {
+            MDC.remove("role");
+            MDC.remove("userId");
+            MDC.remove("traceId");
             requestMetadataContext.clear();
+        }
+    }
+
+    private void putIfPresent(String key, String value) {
+        if (value != null && !value.isBlank()) {
+            MDC.put(key, value);
         }
     }
 }

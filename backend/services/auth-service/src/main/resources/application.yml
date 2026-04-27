@@ -27,6 +27,10 @@ management:
       probes:
         enabled: true
 
+logging:
+  pattern:
+    level: "%5p [traceId:%X{traceId:-},userId:%X{userId:-},role:%X{role:-}]"
+
 app:
   service:
     name: auth-service

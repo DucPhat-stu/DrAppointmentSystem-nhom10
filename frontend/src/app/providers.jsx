@@ -28,6 +28,15 @@ export function AppProviders({ children }) {
     }
   }, [session]);
 
+  useEffect(() => {
+    function handleSessionExpired() {
+      setSession(null);
+    }
+
+    window.addEventListener('healthcare:session-expired', handleSessionExpired);
+    return () => window.removeEventListener('healthcare:session-expired', handleSessionExpired);
+  }, []);
+
   /**
    * Login action – calls auth-service API, sets session.
    * Falls back to mock if API is unavailable.
