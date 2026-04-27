@@ -167,6 +167,17 @@
   overflow-wrap: anywhere;
 }
 
+.summary dd strong,
+.summary dd span {
+  display: block;
+}
+
+.summary dd span {
+  margin-top: 4px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
 .createdBox {
   display: grid;
   gap: 5px;

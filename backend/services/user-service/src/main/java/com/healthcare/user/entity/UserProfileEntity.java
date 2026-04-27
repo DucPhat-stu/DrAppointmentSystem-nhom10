@@ -43,6 +43,12 @@ public class UserProfileEntity {
     @Column(name = "avatar_url")
     private String avatarUrl;
 
+    @Column
+    private String specialty;
+
+    @Column
+    private String department;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
@@ -80,6 +86,12 @@ public class UserProfileEntity {
 
     public String getAvatarUrl() { return avatarUrl; }
     public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
+
+    public String getSpecialty() { return specialty; }
+    public void setSpecialty(String specialty) { this.specialty = specialty; }
+
+    public String getDepartment() { return department; }
+    public void setDepartment(String department) { this.department = department; }
 
     public OffsetDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }

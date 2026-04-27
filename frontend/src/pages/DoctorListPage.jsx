@@ -7,6 +7,19 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function bookingUrl(doctor) {
+  const params = new URLSearchParams({
+    doctorId: doctor.doctorId,
+    date: doctor.date,
+    doctorName: doctor.fullName,
+  });
+  const specialty = doctor.specialty ?? doctor.department;
+  if (specialty) {
+    params.set('specialty', specialty);
+  }
+  return `/appointments/book?${params.toString()}`;
+}
+
 export default function DoctorListPage() {
   const [date, setDate] = useState(today());
   const [doctors, setDoctors] = useState([]);
@@ -81,10 +94,11 @@ export default function DoctorListPage() {
             {doctors.map((doctor) => (
               <article className={styles.card} key={doctor.doctorId}>
                 <div>
-                  <strong>Doctor {doctor.doctorId.slice(0, 8)}</strong>
+                  <strong>{doctor.fullName}</strong>
+                  <small>{doctor.specialty ?? doctor.department ?? 'General care'}</small>
                   <span>{doctor.availableSlots} available slots</span>
                 </div>
-                <Link className={styles.primaryButton} to={`/appointments/book?doctorId=${doctor.doctorId}&date=${doctor.date}`}>
+                <Link className={styles.primaryButton} to={bookingUrl(doctor)}>
                   Book
                 </Link>
               </article>

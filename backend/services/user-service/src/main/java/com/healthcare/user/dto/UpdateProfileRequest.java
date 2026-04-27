@@ -24,6 +24,12 @@ public record UpdateProfileRequest(
         String gender,
 
         @Size(max = 255, message = "Emergency contact must not exceed 255 characters")
-        String emergencyContact
+        String emergencyContact,
+
+        @Size(max = 120, message = "Specialty must not exceed 120 characters")
+        String specialty,
+
+        @Size(max = 120, message = "Department must not exceed 120 characters")
+        String department
 ) {
 }

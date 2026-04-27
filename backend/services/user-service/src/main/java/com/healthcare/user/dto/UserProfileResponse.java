@@ -12,6 +12,8 @@ public record UserProfileResponse(
         LocalDate dateOfBirth,
         String gender,
         String emergencyContact,
-        String avatarUrl
+        String avatarUrl,
+        String specialty,
+        String department
 ) {
 }

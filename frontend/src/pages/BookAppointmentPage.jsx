@@ -23,6 +23,8 @@ function looksLikeUuid(value) {
 export default function BookAppointmentPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [doctorId, setDoctorId] = useState(searchParams.get('doctorId') ?? '');
+  const [doctorName, setDoctorName] = useState(searchParams.get('doctorName') ?? '');
+  const [specialty, setSpecialty] = useState(searchParams.get('specialty') ?? '');
   const [date, setDate] = useState(searchParams.get('date') ?? today());
   const [slots, setSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
@@ -51,7 +53,10 @@ export default function BookAppointmentPage() {
     try {
       const response = await fetchAvailableSlots(nextDoctorId, nextDate);
       setSlots(response.data ?? []);
-      setSearchParams({ doctorId: nextDoctorId, date: nextDate });
+      const nextParams = { doctorId: nextDoctorId, date: nextDate };
+      if (doctorName) nextParams.doctorName = doctorName;
+      if (specialty) nextParams.specialty = specialty;
+      setSearchParams(nextParams);
     } catch (err) {
       setError(err.message ?? 'Unable to load available slots');
       setSlots([]);
@@ -62,6 +67,8 @@ export default function BookAppointmentPage() {
 
   useEffect(() => {
     const initialDoctorId = searchParams.get('doctorId');
+    setDoctorName(searchParams.get('doctorName') ?? '');
+    setSpecialty(searchParams.get('specialty') ?? '');
     if (initialDoctorId && looksLikeUuid(initialDoctorId)) {
       loadSlots(initialDoctorId, searchParams.get('date') ?? date);
     }
@@ -113,12 +120,16 @@ export default function BookAppointmentPage() {
       <form className={styles.filters} onSubmit={applyFilters}>
         <label>
           <span>Doctor ID</span>
-          <input
-            value={doctorId}
-            onChange={(event) => setDoctorId(event.target.value.trim())}
-            placeholder="doctor uuid"
-            disabled={loading}
-            required
+            <input
+              value={doctorId}
+              onChange={(event) => {
+                setDoctorId(event.target.value.trim());
+                setDoctorName('');
+                setSpecialty('');
+              }}
+              placeholder="doctor uuid"
+              disabled={loading}
+              required
           />
         </label>
         <label>
@@ -173,8 +184,11 @@ export default function BookAppointmentPage() {
           {selectedSlot ? (
             <dl className={styles.summary}>
               <div>
-                <dt>Doctor ID</dt>
-                <dd>{doctorId}</dd>
+                <dt>Doctor</dt>
+                <dd>
+                  <strong>{doctorName || `Doctor ${doctorId.slice(0, 8)}`}</strong>
+                  {specialty && <span>{specialty}</span>}
+                </dd>
               </div>
               <div>
                 <dt>Date</dt>

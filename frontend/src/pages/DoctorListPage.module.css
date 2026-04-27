@@ -82,9 +82,14 @@
 
 .panelHeader span,
 .card span,
+.card small,
 .empty {
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
+}
+
+.card small {
+  color: var(--color-text-secondary);
 }
 
 .grid {
@@ -108,7 +113,8 @@
 }
 
 .card strong,
-.card span {
+.card span,
+.card small {
   overflow-wrap: anywhere;
 }
 
