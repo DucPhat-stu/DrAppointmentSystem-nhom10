@@ -7,6 +7,8 @@ import { clearSession, loadSession, persistSession } from '../services/sessionSt
 import * as authService from '../services/authService.js';
 import { ApiError } from '../services/httpClient.js';
 
+const allowMockAuthFallback = import.meta.env.DEV;
+
 export const AuthContext = createContext({
   session: null,
   setSession: () => {},
@@ -64,8 +66,8 @@ export function AppProviders({ children }) {
       setSession(sessionData);
       return { success: true };
     } catch (err) {
-      // If backend unavailable, allow mock login for development
-      if (!(err instanceof ApiError)) {
+      // If backend is unavailable, allow mock auth only during local development.
+      if (allowMockAuthFallback && !(err instanceof ApiError)) {
         console.warn('[Auth] Backend unreachable, using mock session for dev.');
         setSession({
           email,
@@ -89,7 +91,7 @@ export function AppProviders({ children }) {
       await authService.register({ firstName, lastName, email, password });
       return { success: true };
     } catch (err) {
-      if (!(err instanceof ApiError)) {
+      if (allowMockAuthFallback && !(err instanceof ApiError)) {
         console.warn('[Auth] Backend unreachable, mock register success for dev.');
         return { success: true, mock: true };
       }
