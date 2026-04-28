@@ -53,7 +53,8 @@ public class AppointmentEventOutboxEntity {
         entity.doctorId = appointment.getDoctorId();
         entity.patientId = appointment.getPatientId();
         entity.payload = """
-                {"event":"%s","appointmentId":"%s","doctorId":"%s","patientId":"%s"}""".formatted(
+                {"eventId":"%s","event":"%s","appointmentId":"%s","doctorId":"%s","patientId":"%s"}""".formatted(
+                entity.id,
                 eventName,
                 appointment.getId(),
                 appointment.getDoctorId(),

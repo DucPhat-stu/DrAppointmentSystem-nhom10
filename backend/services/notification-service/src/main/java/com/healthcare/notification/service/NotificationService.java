@@ -60,17 +60,22 @@ public class NotificationService {
     @Transactional
     public void create(UUID recipientId,
                        UUID appointmentId,
+                       UUID eventId,
                        String eventName,
                        String type,
                        String title,
                        String content) {
-        if (notificationRepository.existsByAppointmentIdAndEventNameAndRecipientId(appointmentId, eventName, recipientId)) {
+        if (eventId != null && notificationRepository.existsByEventIdAndRecipientId(eventId, recipientId)) {
+            return;
+        }
+        if (eventId == null && notificationRepository.existsByAppointmentIdAndEventNameAndRecipientId(appointmentId, eventName, recipientId)) {
             return;
         }
 
         NotificationEntity notification = new NotificationEntity();
         notification.setRecipientId(recipientId);
         notification.setAppointmentId(appointmentId);
+        notification.setEventId(eventId);
         notification.setEventName(eventName);
         notification.setType(type);
         notification.setTitle(title);
@@ -88,6 +93,7 @@ public class NotificationService {
                 entity.getId(),
                 entity.getRecipientId(),
                 entity.getAppointmentId(),
+                entity.getEventId(),
                 entity.getEventName(),
                 entity.getType(),
                 entity.getTitle(),

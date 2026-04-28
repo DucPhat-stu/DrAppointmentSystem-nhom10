@@ -20,4 +20,6 @@ public interface NotificationJpaRepository extends JpaRepository<NotificationEnt
     long countByRecipientIdAndReadAtIsNull(UUID recipientId);
 
     boolean existsByAppointmentIdAndEventNameAndRecipientId(UUID appointmentId, String eventName, UUID recipientId);
+
+    boolean existsByEventIdAndRecipientId(UUID eventId, UUID recipientId);
 }

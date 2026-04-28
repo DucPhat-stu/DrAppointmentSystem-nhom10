@@ -45,11 +45,14 @@ class AppointmentServiceTest {
     @Mock
     private DoctorSlotClient doctorSlotClient;
 
+    @Mock
+    private SlotSyncService slotSyncService;
+
     private AppointmentService service;
 
     @BeforeEach
     void setUp() {
-        service = new AppointmentService(appointmentRepository, idempotencyRepository, eventPublisher, doctorSlotClient);
+        service = new AppointmentService(appointmentRepository, idempotencyRepository, eventPublisher, doctorSlotClient, slotSyncService);
     }
 
     @Test
@@ -64,7 +67,7 @@ class AppointmentServiceTest {
 
         assertThat(response.status()).isEqualTo(AppointmentStatus.CONFIRMED);
         verify(eventPublisher).publishStatusChanged("APPOINTMENT_CONFIRMED", appointment);
-        verify(doctorSlotClient).updateSlotStatus(appointment.getSlotId(), "BOOKED");
+        verify(slotSyncService).enqueueReserve(appointment);
     }
 
     @Test
@@ -88,7 +91,7 @@ class AppointmentServiceTest {
 
         assertThat(response.patientId()).isEqualTo(patientId);
         assertThat(response.status()).isEqualTo(AppointmentStatus.PENDING);
-        verify(doctorSlotClient).updateSlotStatus(slotId, "BOOKED");
+        verify(slotSyncService).enqueueReserve(any(AppointmentEntity.class));
         verify(eventPublisher).publishStatusChanged(eq("APPOINTMENT_REQUESTED"), any(AppointmentEntity.class));
     }
 
@@ -158,7 +161,7 @@ class AppointmentServiceTest {
 
         assertThat(response.status()).isEqualTo(AppointmentStatus.CANCELLED);
         assertThat(response.cancellationReason()).isEqualTo("No longer needed");
-        verify(doctorSlotClient).updateSlotStatus(appointment.getSlotId(), "AVAILABLE");
+        verify(slotSyncService).enqueueRelease(appointment);
         verify(eventPublisher).publishStatusChanged("APPOINTMENT_CANCELLED_BY_PATIENT", appointment);
     }
 
@@ -174,6 +177,8 @@ class AppointmentServiceTest {
 
         assertThat(response.status()).isEqualTo(AppointmentStatus.COMPLETED);
         verify(eventPublisher).publishStatusChanged("APPOINTMENT_COMPLETED", appointment);
+        verify(slotSyncService, never()).enqueueReserve(any());
+        verify(slotSyncService, never()).enqueueRelease(any(AppointmentEntity.class));
         verify(doctorSlotClient, never()).updateSlotStatus(any(), any());
     }
 
@@ -210,8 +215,8 @@ class AppointmentServiceTest {
         assertThat(response.slotId()).isEqualTo(newSlotId);
         assertThat(response.status()).isEqualTo(AppointmentStatus.PENDING);
         assertThat(response.reason()).isEqualTo("Need a later time");
-        verify(doctorSlotClient).updateSlotStatus(newSlotId, "BOOKED");
-        verify(doctorSlotClient).updateSlotStatus(oldSlotId, "AVAILABLE");
+        verify(slotSyncService).enqueueReserve(appointment);
+        verify(slotSyncService).enqueueRelease(appointmentId, oldSlotId);
         verify(eventPublisher).publishStatusChanged("APPOINTMENT_RESCHEDULED", appointment);
     }
 

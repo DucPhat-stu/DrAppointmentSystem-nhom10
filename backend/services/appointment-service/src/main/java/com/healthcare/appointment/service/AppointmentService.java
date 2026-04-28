@@ -42,15 +42,18 @@ public class AppointmentService {
     private final AppointmentActionIdempotencyJpaRepository idempotencyRepository;
     private final AppointmentEventPublisher eventPublisher;
     private final DoctorSlotClient doctorSlotClient;
+    private final SlotSyncService slotSyncService;
 
     public AppointmentService(AppointmentJpaRepository appointmentRepository,
                               AppointmentActionIdempotencyJpaRepository idempotencyRepository,
                               AppointmentEventPublisher eventPublisher,
-                              DoctorSlotClient doctorSlotClient) {
+                              DoctorSlotClient doctorSlotClient,
+                              SlotSyncService slotSyncService) {
         this.appointmentRepository = appointmentRepository;
         this.idempotencyRepository = idempotencyRepository;
         this.eventPublisher = eventPublisher;
         this.doctorSlotClient = doctorSlotClient;
+        this.slotSyncService = slotSyncService;
     }
 
     @Transactional
@@ -78,7 +81,7 @@ public class AppointmentService {
 
         try {
             AppointmentEntity saved = appointmentRepository.save(appointment);
-            doctorSlotClient.updateSlotStatus(saved.getSlotId(), "BOOKED");
+            slotSyncService.enqueueReserve(saved);
             eventPublisher.publishStatusChanged("APPOINTMENT_REQUESTED", saved);
             return toResponse(saved);
         } catch (DataIntegrityViolationException exception) {
@@ -219,7 +222,7 @@ public class AppointmentService {
         appointment.setCancellationReason(request.reason());
 
         AppointmentEntity saved = appointmentRepository.save(appointment);
-        syncSlotStatus(saved, AppointmentStatus.CANCELLED);
+        enqueueSlotSync(saved, AppointmentStatus.CANCELLED);
         recordIdempotency(saved, "PATIENT_CANCEL", idempotencyKey, AppointmentStatus.CANCELLED);
         eventPublisher.publishStatusChanged("APPOINTMENT_CANCELLED_BY_PATIENT", saved);
         return toResponse(saved);
@@ -269,9 +272,9 @@ public class AppointmentService {
         appointment.setCancellationReason(null);
 
         AppointmentEntity saved = appointmentRepository.save(appointment);
-        doctorSlotClient.updateSlotStatus(saved.getSlotId(), "BOOKED");
+        slotSyncService.enqueueReserve(saved);
         if (oldSlotId != null) {
-            doctorSlotClient.updateSlotStatus(oldSlotId, "AVAILABLE");
+            slotSyncService.enqueueRelease(saved.getId(), oldSlotId);
         }
         recordIdempotency(saved, "PATIENT_RESCHEDULE", idempotencyKey, AppointmentStatus.PENDING);
         eventPublisher.publishStatusChanged("APPOINTMENT_RESCHEDULED", saved);
@@ -309,20 +312,20 @@ public class AppointmentService {
         }
 
         AppointmentEntity saved = appointmentRepository.save(appointment);
-        syncSlotStatus(saved, targetStatus);
+        enqueueSlotSync(saved, targetStatus);
         recordIdempotency(saved, action, idempotencyKey, targetStatus);
         eventPublisher.publishStatusChanged(eventName, saved);
         return toResponse(saved);
     }
 
-    private void syncSlotStatus(AppointmentEntity appointment, AppointmentStatus targetStatus) {
+    private void enqueueSlotSync(AppointmentEntity appointment, AppointmentStatus targetStatus) {
         if (appointment.getSlotId() == null) {
             return;
         }
         if (targetStatus == AppointmentStatus.CONFIRMED) {
-            doctorSlotClient.updateSlotStatus(appointment.getSlotId(), "BOOKED");
+            slotSyncService.enqueueReserve(appointment);
         } else if (targetStatus == AppointmentStatus.REJECTED || targetStatus == AppointmentStatus.CANCELLED) {
-            doctorSlotClient.updateSlotStatus(appointment.getSlotId(), "AVAILABLE");
+            slotSyncService.enqueueRelease(appointment);
         }
     }
 

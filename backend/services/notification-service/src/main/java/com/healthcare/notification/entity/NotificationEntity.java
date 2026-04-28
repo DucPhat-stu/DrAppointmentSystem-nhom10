@@ -21,6 +21,9 @@ public class NotificationEntity {
     @Column(name = "appointment_id")
     private UUID appointmentId;
 
+    @Column(name = "event_id")
+    private UUID eventId;
+
     @Column(name = "event_name", nullable = false, length = 80)
     private String eventName;
 
@@ -77,6 +80,14 @@ public class NotificationEntity {
 
     public void setAppointmentId(UUID appointmentId) {
         this.appointmentId = appointmentId;
+    }
+
+    public UUID getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(UUID eventId) {
+        this.eventId = eventId;
     }
 
     public String getEventName() {

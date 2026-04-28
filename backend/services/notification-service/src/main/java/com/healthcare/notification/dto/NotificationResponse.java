@@ -7,6 +7,7 @@ public record NotificationResponse(
         UUID id,
         UUID recipientId,
         UUID appointmentId,
+        UUID eventId,
         String eventName,
         String type,
         String title,

@@ -50,14 +50,15 @@ public class AppointmentEventConsumer {
     }
 
     private void notifyPatient(AppointmentEventPayload event, String title, String content) {
-        notificationService.create(event.patientId(), event.appointmentId(), event.event(), "APPOINTMENT", title, content);
+        notificationService.create(event.patientId(), event.appointmentId(), event.eventId(), event.event(), "APPOINTMENT", title, content);
     }
 
     private void notifyDoctor(AppointmentEventPayload event, String title, String content) {
-        notificationService.create(event.doctorId(), event.appointmentId(), event.event(), "APPOINTMENT", title, content);
+        notificationService.create(event.doctorId(), event.appointmentId(), event.eventId(), event.event(), "APPOINTMENT", title, content);
     }
 
     private record AppointmentEventPayload(
+            UUID eventId,
             String event,
             UUID appointmentId,
             UUID doctorId,
