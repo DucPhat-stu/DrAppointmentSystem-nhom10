@@ -139,6 +139,28 @@ class AppointmentServiceTest {
                 .isEqualTo(ErrorCode.CONFLICT);
     }
 
+    @Test
+    void patientCancelReleasesSlotAndPublishesEvent() {
+        UUID patientId = UUID.randomUUID();
+        UUID appointmentId = UUID.randomUUID();
+        AppointmentEntity appointment = appointment(UUID.randomUUID(), appointmentId, AppointmentStatus.PENDING);
+        appointment.setPatientId(patientId);
+        when(appointmentRepository.findByIdAndPatientId(appointmentId, patientId)).thenReturn(Optional.of(appointment));
+        when(appointmentRepository.save(appointment)).thenReturn(appointment);
+
+        var response = service.cancelPatientAppointment(
+                patientId,
+                appointmentId,
+                "patient-key-1",
+                new AppointmentActionRequest("No longer needed")
+        );
+
+        assertThat(response.status()).isEqualTo(AppointmentStatus.CANCELLED);
+        assertThat(response.cancellationReason()).isEqualTo("No longer needed");
+        verify(doctorSlotClient).updateSlotStatus(appointment.getSlotId(), "AVAILABLE");
+        verify(eventPublisher).publishStatusChanged("APPOINTMENT_CANCELLED_BY_PATIENT", appointment);
+    }
+
     private AppointmentEntity appointment(UUID doctorId, UUID appointmentId, AppointmentStatus status) {
         AppointmentEntity appointment = new AppointmentEntity();
         appointment.setId(appointmentId);

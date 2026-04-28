@@ -93,6 +93,27 @@ public class AppointmentService {
     }
 
     @Transactional(readOnly = true)
+    public AppointmentPageResponse findPatientAppointments(UUID patientId,
+                                                           String rawStatus,
+                                                           int page,
+                                                           int size) {
+        AppointmentStatus status = parseStatus(rawStatus);
+        PageRequest pageRequest = PageRequest.of(
+                Math.max(page, 0),
+                Math.min(Math.max(size, 1), 100),
+                Sort.by(Sort.Direction.DESC, "scheduledStart")
+        );
+        var appointments = appointmentRepository.findAll(filterPatient(patientId, status), pageRequest);
+        return new AppointmentPageResponse(
+                appointments.getContent().stream().map(this::toResponse).toList(),
+                appointments.getNumber(),
+                appointments.getSize(),
+                appointments.getTotalElements(),
+                appointments.getTotalPages()
+        );
+    }
+
+    @Transactional(readOnly = true)
     public AppointmentPageResponse findDoctorAppointments(UUID doctorId,
                                                           LocalDate date,
                                                           AppointmentStatus status,
@@ -162,6 +183,40 @@ public class AppointmentService {
     @Transactional
     public AppointmentResponse cancel(UUID doctorId, UUID appointmentId, String idempotencyKey, AppointmentActionRequest request) {
         return transition(doctorId, appointmentId, "CANCEL", idempotencyKey, AppointmentStatus.CANCELLED, "APPOINTMENT_CANCELLED", request.reason());
+    }
+
+    @Transactional
+    public AppointmentResponse cancelPatientAppointment(UUID patientId,
+                                                        UUID appointmentId,
+                                                        String idempotencyKey,
+                                                        AppointmentActionRequest request) {
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            var existing = idempotencyRepository.findByAppointmentIdAndActionNameAndIdempotencyKey(
+                    appointmentId,
+                    "PATIENT_CANCEL",
+                    idempotencyKey
+            );
+            if (existing.isPresent()) {
+                return getPatientAppointment(patientId, appointmentId);
+            }
+        }
+
+        AppointmentEntity appointment = appointmentRepository.findByIdAndPatientId(appointmentId, patientId)
+                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, "Appointment not found"));
+        if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
+            recordIdempotency(appointment, "PATIENT_CANCEL", idempotencyKey, AppointmentStatus.CANCELLED);
+            return toResponse(appointment);
+        }
+
+        validateTransition(appointment.getStatus(), AppointmentStatus.CANCELLED);
+        appointment.setStatus(AppointmentStatus.CANCELLED);
+        appointment.setCancellationReason(request.reason());
+
+        AppointmentEntity saved = appointmentRepository.save(appointment);
+        syncSlotStatus(saved, AppointmentStatus.CANCELLED);
+        recordIdempotency(saved, "PATIENT_CANCEL", idempotencyKey, AppointmentStatus.CANCELLED);
+        eventPublisher.publishStatusChanged("APPOINTMENT_CANCELLED_BY_PATIENT", saved);
+        return toResponse(saved);
     }
 
     private AppointmentResponse transition(UUID doctorId,
@@ -278,6 +333,28 @@ public class AppointmentService {
                 criteriaBuilder.equal(root.get("doctorId"), doctorId),
                 criteriaBuilder.equal(root.get("patientId"), patientId)
         );
+    }
+
+    private Specification<AppointmentEntity> filterPatient(UUID patientId, AppointmentStatus status) {
+        return (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(criteriaBuilder.equal(root.get("patientId"), patientId));
+            if (status != null) {
+                predicates.add(criteriaBuilder.equal(root.get("status"), status));
+            }
+            return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
+        };
+    }
+
+    private AppointmentStatus parseStatus(String rawStatus) {
+        if (rawStatus == null || rawStatus.isBlank()) {
+            return null;
+        }
+        try {
+            return AppointmentStatus.valueOf(rawStatus.trim().toUpperCase());
+        } catch (IllegalArgumentException exception) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Invalid appointment status");
+        }
     }
 
     private AppointmentResponse toResponse(AppointmentEntity entity) {

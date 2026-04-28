@@ -41,6 +41,19 @@ public class DoctorDirectoryService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public DoctorProfileSummaryResponse getDoctor(UUID doctorId) {
+        return loadProfiles(List.of(doctorId))
+                .getOrDefault(doctorId, new DoctorProfileSummaryResponse(
+                        doctorId,
+                        "Doctor " + doctorId.toString().substring(0, 8),
+                        null,
+                        null,
+                        "General care",
+                        null
+                ));
+    }
+
     private Map<UUID, DoctorProfileSummaryResponse> loadProfiles(Collection<UUID> doctorIds) {
         try {
             return userProfileClient.findProfiles(doctorIds)
