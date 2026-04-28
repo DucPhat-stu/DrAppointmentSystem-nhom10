@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { createAppointment } from '../services/appointmentService.js';
 import { fetchAvailableSlots } from '../services/doctorService.js';
 import styles from './BookAppointmentPage.module.css';
@@ -223,6 +223,7 @@ export default function BookAppointmentPage() {
             <div className={styles.createdBox}>
               <strong>Appointment {createdAppointment.status}</strong>
               <span>{createdAppointment.id}</span>
+              <Link to={`/appointments/${createdAppointment.id}`}>View details</Link>
             </div>
           )}
         </form>

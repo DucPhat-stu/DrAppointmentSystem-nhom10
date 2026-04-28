@@ -8,6 +8,7 @@ import DoctorListPage from '../pages/DoctorListPage.jsx';
 import DoctorDetailPage from '../pages/DoctorDetailPage.jsx';
 import BookAppointmentPage from '../pages/BookAppointmentPage.jsx';
 import AppointmentDetailPage from '../pages/AppointmentDetailPage.jsx';
+import MyAppointmentsPage from '../pages/MyAppointmentsPage.jsx';
 import ProfilePage from '../pages/ProfilePage.jsx';
 import NotificationPage from '../pages/NotificationPage.jsx';
 import DoctorSchedulePage from '../pages/DoctorSchedulePage.jsx';
@@ -76,6 +77,10 @@ export const router = createBrowserRouter([
       {
         path: '/appointments/book',
         element: <BookAppointmentPage />,
+      },
+      {
+        path: '/appointments',
+        element: <MyAppointmentsPage />,
       },
       {
         path: '/appointments/:appointmentId',
