@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { cancelAppointment, fetchAppointment } from '../services/appointmentService.js';
+import { cancelAppointment, fetchAppointment, rescheduleAppointment } from '../services/appointmentService.js';
+import { fetchAvailableSlots } from '../services/doctorService.js';
 import styles from './Phase3Pages.module.css';
 
 const STATUS_STEPS = ['PENDING', 'CONFIRMED', 'COMPLETED'];
@@ -21,32 +22,66 @@ function canCancel(status) {
   return status === 'PENDING' || status === 'CONFIRMED';
 }
 
+function toDateInputValue(value) {
+  if (!value) return new Date().toISOString().slice(0, 10);
+  return new Date(value).toISOString().slice(0, 10);
+}
+
+function formatTime(value) {
+  if (!value) return '-';
+  return new Intl.DateTimeFormat('en', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value));
+}
+
 export default function AppointmentDetailPage() {
   const { appointmentId } = useParams();
   const [appointment, setAppointment] = useState(null);
   const [reason, setReason] = useState('');
+  const [rescheduleDate, setRescheduleDate] = useState(new Date().toISOString().slice(0, 10));
+  const [slots, setSlots] = useState([]);
+  const [selectedSlotId, setSelectedSlotId] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [slotLoading, setSlotLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
-  async function loadAppointment() {
+  const loadAppointment = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       const response = await fetchAppointment(appointmentId);
       setAppointment(response.data);
+      setRescheduleDate(toDateInputValue(response.data?.scheduledStart));
     } catch (err) {
       setError(err.message ?? 'Unable to load appointment');
       setAppointment(null);
     } finally {
       setLoading(false);
     }
-  }
+  }, [appointmentId]);
 
   useEffect(() => {
     loadAppointment();
-  }, [appointmentId]);
+  }, [loadAppointment]);
+
+  async function loadSlots() {
+    if (!appointment?.doctorId || !rescheduleDate) return;
+    setSlotLoading(true);
+    setError('');
+    setSelectedSlotId('');
+    try {
+      const response = await fetchAvailableSlots(appointment.doctorId, rescheduleDate);
+      setSlots(response.data ?? []);
+    } catch (err) {
+      setError(err.message ?? 'Unable to load available slots');
+      setSlots([]);
+    } finally {
+      setSlotLoading(false);
+    }
+  }
 
   async function submitCancel(event) {
     event.preventDefault();
@@ -61,6 +96,29 @@ export default function AppointmentDetailPage() {
       setMessage('Appointment cancelled.');
     } catch (err) {
       setError(err.message ?? 'Unable to cancel appointment');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function submitReschedule(event) {
+    event.preventDefault();
+    if (!appointment || !selectedSlotId || !canCancel(appointment.status)) return;
+    setSaving(true);
+    setError('');
+    setMessage('');
+    try {
+      const response = await rescheduleAppointment(appointment.id, {
+        slotId: selectedSlotId,
+        reason: reason || 'Patient requested a new appointment time',
+      });
+      setAppointment(response.data);
+      setReason('');
+      setSelectedSlotId('');
+      setSlots([]);
+      setMessage('Appointment rescheduled and sent for doctor confirmation.');
+    } catch (err) {
+      setError(err.message ?? 'Unable to reschedule appointment');
     } finally {
       setSaving(false);
     }
@@ -157,6 +215,52 @@ export default function AppointmentDetailPage() {
               </label>
               <button className={styles.dangerButton} type="submit" disabled={!canCancel(appointment.status) || saving}>
                 Cancel appointment
+              </button>
+            </form>
+
+            <form className={styles.panel} onSubmit={submitReschedule}>
+              <div className={styles.panelHeader}>
+                <h2>Reschedule</h2>
+              </div>
+              <label className={styles.field}>
+                <span>New date</span>
+                <input
+                  type="date"
+                  value={rescheduleDate}
+                  onChange={(event) => setRescheduleDate(event.target.value)}
+                  disabled={!canCancel(appointment.status) || slotLoading || saving}
+                />
+              </label>
+              <button
+                className={styles.secondaryButton}
+                type="button"
+                onClick={loadSlots}
+                disabled={!canCancel(appointment.status) || slotLoading || saving}
+              >
+                Load slots
+              </button>
+              {slotLoading ? (
+                <p className={styles.empty}>Loading slots...</p>
+              ) : slots.length > 0 ? (
+                <div className={styles.slotGrid}>
+                  {slots.map((slot) => (
+                    <button
+                      className={`${styles.slot} ${selectedSlotId === slot.id ? styles.selectedSlot : ''}`}
+                      key={slot.id}
+                      type="button"
+                      onClick={() => setSelectedSlotId(slot.id)}
+                      disabled={saving}
+                    >
+                      <strong>{formatTime(slot.startTime)} - {formatTime(slot.endTime)}</strong>
+                      <span className={styles.meta}>{slot.status}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.empty}>Load slots to choose a new time.</p>
+              )}
+              <button className={styles.primaryButton} type="submit" disabled={!canCancel(appointment.status) || !selectedSlotId || saving}>
+                Request reschedule
               </button>
             </form>
           </aside>

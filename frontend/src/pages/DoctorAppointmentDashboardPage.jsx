@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   cancelDoctorAppointment,
+  completeDoctorAppointment,
   confirmDoctorAppointment,
   fetchDoctorAppointment,
   fetchDoctorAppointments,
@@ -16,6 +17,7 @@ const actionLabels = {
   confirm: 'Confirm appointment',
   reject: 'Reject appointment',
   cancel: 'Cancel appointment',
+  complete: 'Mark completed',
 };
 const blankSoapNote = {
   subjective: '',
@@ -43,6 +45,14 @@ function idempotencyKey() {
     return window.crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function needsReason(action) {
+  return action === 'reject' || action === 'cancel';
+}
+
+function isPrimaryAction(action) {
+  return action === 'confirm' || action === 'complete';
 }
 
 export default function DoctorAppointmentDashboardPage() {
@@ -197,6 +207,8 @@ export default function DoctorAppointmentDashboardPage() {
       let response;
       if (modal.action === 'confirm') {
         response = await confirmDoctorAppointment(modal.appointment.id, key);
+      } else if (modal.action === 'complete') {
+        response = await completeDoctorAppointment(modal.appointment.id, key);
       } else if (modal.action === 'reject') {
         response = await rejectDoctorAppointment(modal.appointment.id, key, reason);
       } else {
@@ -246,7 +258,7 @@ export default function DoctorAppointmentDashboardPage() {
   function actionSet(appointment) {
     if (!appointment) return [];
     if (appointment.status === 'PENDING') return ['confirm', 'reject', 'cancel'];
-    if (appointment.status === 'CONFIRMED') return ['cancel'];
+    if (appointment.status === 'CONFIRMED') return ['complete', 'cancel'];
     return [];
   }
 
@@ -364,7 +376,7 @@ export default function DoctorAppointmentDashboardPage() {
                 {actionSet(selected).map((action) => (
                   <button
                     key={action}
-                    className={action === 'confirm' ? styles.primaryButton : styles.dangerButton}
+                    className={isPrimaryAction(action) ? styles.primaryButton : styles.dangerButton}
                     type="button"
                     onClick={() => openAction(action)}
                     disabled={actionLoading}
@@ -451,7 +463,7 @@ export default function DoctorAppointmentDashboardPage() {
           <form className={styles.modal} onSubmit={submitAction}>
             <h2>{actionLabels[modal.action]}</h2>
             <p>{formatDateTime(modal.appointment.scheduledStart)} for patient {modal.appointment.patientId}</p>
-            {modal.action !== 'confirm' && (
+            {needsReason(modal.action) && (
               <label>
                 <span>Reason</span>
                 <textarea
@@ -466,7 +478,7 @@ export default function DoctorAppointmentDashboardPage() {
               <button className={styles.secondaryButton} type="button" onClick={() => setModal(null)} disabled={actionLoading}>
                 Close
               </button>
-              <button className={modal.action === 'confirm' ? styles.primaryButton : styles.dangerButton} type="submit" disabled={actionLoading}>
+              <button className={isPrimaryAction(modal.action) ? styles.primaryButton : styles.dangerButton} type="submit" disabled={actionLoading}>
                 Confirm
               </button>
             </div>
