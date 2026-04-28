@@ -237,6 +237,18 @@ cd main/backend
 mvn -pl services/auth-service spring-boot:run
 ```
 
+- Chay appointment regression bang Postman/Newman sau khi da login va co bien `appointmentId`, `slotId`, `alternateSlotId`:
+
+```powershell
+newman run postman/collections/03-appointment.postman_collection.json -e postman/environments/healthcare-local.postman_environment.json
+```
+
+- Chay smoke flow end-to-end tren local stack:
+
+```powershell
+newman run postman/collections/99-e2e-smoke.postman_collection.json -e postman/environments/healthcare-local.postman_environment.json
+```
+
 - Trong giai doan nay, cac lenh tren duoc tai lieu hoa de doi du an thuc thi sau; chua coi la tieu chi phai run ngay trong lan cap nhat docs nay.
 
 ## 11. Dieu khong bo qua trong regression

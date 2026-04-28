@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchNotifications, markNotificationRead, markNotificationsRead } from '../services/notificationService.js';
 import styles from './Phase3Pages.module.css';
@@ -18,7 +18,7 @@ export default function NotificationPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  async function loadNotifications() {
+  const loadNotifications = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -32,11 +32,11 @@ export default function NotificationPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     loadNotifications();
-  }, []);
+  }, [loadNotifications]);
 
   async function markOne(notificationId) {
     setSaving(true);

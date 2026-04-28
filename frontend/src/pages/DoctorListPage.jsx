@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchAvailableDoctors } from '../services/doctorService.js';
 import styles from './DoctorListPage.module.css';
@@ -26,7 +26,7 @@ export default function DoctorListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  async function loadDoctors(nextDate = date) {
+  const loadDoctors = useCallback(async (nextDate = date) => {
     setLoading(true);
     setError('');
     try {
@@ -38,11 +38,11 @@ export default function DoctorListPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [date]);
 
   useEffect(() => {
     loadDoctors();
-  }, []);
+  }, [loadDoctors]);
 
   async function applyDate(event) {
     event.preventDefault();

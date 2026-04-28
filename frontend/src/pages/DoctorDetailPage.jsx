@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { fetchAvailableSlots, fetchDoctorDetail } from '../services/doctorService.js';
 import styles from './Phase3Pages.module.css';
@@ -39,7 +39,7 @@ export default function DoctorDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  async function load(nextDate = date) {
+  const load = useCallback(async (nextDate = date) => {
     setLoading(true);
     setError('');
     try {
@@ -56,11 +56,11 @@ export default function DoctorDetailPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [date, doctorId, setSearchParams]);
 
   useEffect(() => {
     load(date);
-  }, [doctorId]);
+  }, [load, date]);
 
   function applyDate(event) {
     event.preventDefault();

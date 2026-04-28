@@ -1,0 +1,191 @@
+{
+  "info": {
+    "_postman_id": "8fd7844b-9ad8-42ea-b6fd-3d88d0ea5579",
+    "name": "99-e2e-smoke",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Local smoke flow: login, discover doctor/slots, book, reschedule, doctor confirm, complete guard, notification list."
+  },
+  "item": [
+    {
+      "name": "Login Patient",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{patientSeedEmail}}\",\n  \"password\": \"{{patientSeedPassword}}\",\n  \"actor\": \"PATIENT\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrlAuth}}/api/v1/auth/login"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "pm.test('Patient login OK', function () { pm.response.to.have.status(200); });",
+          "const body = pm.response.json();",
+          "pm.environment.set('accessTokenPatient', body.data.accessToken);",
+          "pm.environment.set('refreshTokenPatient', body.data.refreshToken);"
+        ] }
+      }]
+    },
+    {
+      "name": "Login Doctor",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{doctorSeedEmail}}\",\n  \"password\": \"{{doctorSeedPassword}}\",\n  \"actor\": \"DOCTOR\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrlAuth}}/api/v1/auth/login"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "pm.test('Doctor login OK', function () { pm.response.to.have.status(200); });",
+          "const body = pm.response.json();",
+          "pm.environment.set('accessTokenDoctor', body.data.accessToken);",
+          "pm.environment.set('refreshTokenDoctor', body.data.refreshToken);"
+        ] }
+      }]
+    },
+    {
+      "name": "List Available Doctors",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessTokenPatient}}" }],
+        "url": "{{baseUrlDoctor}}/api/v1/doctors?date={{appointmentDate}}"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "pm.test('Doctors loaded', function () { pm.response.to.have.status(200); });",
+          "const body = pm.response.json();",
+          "pm.expect(body.data.length).to.be.greaterThan(0);",
+          "pm.environment.set('doctorId', body.data[0].doctorId);"
+        ] }
+      }]
+    },
+    {
+      "name": "List Available Slots",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessTokenPatient}}" }],
+        "url": "{{baseUrlDoctor}}/api/v1/doctors/{{doctorId}}/available-slots?date={{appointmentDate}}"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "pm.test('Slots loaded', function () { pm.response.to.have.status(200); });",
+          "const body = pm.response.json();",
+          "pm.expect(body.data.length).to.be.greaterThan(1);",
+          "pm.environment.set('slotId', body.data[0].id);",
+          "pm.environment.set('alternateSlotId', body.data[1].id);"
+        ] }
+      }]
+    },
+    {
+      "name": "Create Appointment",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessTokenPatient}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"doctorId\": \"{{doctorId}}\",\n  \"slotId\": \"{{slotId}}\",\n  \"reason\": \"E2E smoke booking\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrlAppointment}}/api/v1/appointments"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "pm.test('Appointment created', function () { pm.response.to.have.status(200); });",
+          "const body = pm.response.json();",
+          "pm.environment.set('appointmentId', body.data.id);",
+          "pm.expect(body.data.status).to.eql('PENDING');"
+        ] }
+      }]
+    },
+    {
+      "name": "Reschedule Appointment",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessTokenPatient}}" },
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Idempotency-Key", "value": "{{idempotencyKey}}-e2e-reschedule" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"slotId\": \"{{alternateSlotId}}\",\n  \"reason\": \"E2E smoke reschedule\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrlAppointment}}/api/v1/appointments/{{appointmentId}}/reschedule"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "pm.test('Appointment rescheduled', function () { pm.response.to.have.status(200); });",
+          "const body = pm.response.json();",
+          "pm.expect(body.data.status).to.eql('PENDING');"
+        ] }
+      }]
+    },
+    {
+      "name": "Doctor Confirm Appointment",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessTokenDoctor}}" },
+          { "key": "X-Idempotency-Key", "value": "{{idempotencyKey}}-e2e-confirm" }
+        ],
+        "url": "{{baseUrlDoctor}}/api/v1/doctors/appointments/{{appointmentId}}/confirm"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "pm.test('Appointment confirmed', function () { pm.response.to.have.status(200); });",
+          "const body = pm.response.json();",
+          "pm.expect(body.data.status).to.eql('CONFIRMED');"
+        ] }
+      }]
+    },
+    {
+      "name": "Doctor Complete Future Guard",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessTokenDoctor}}" },
+          { "key": "X-Idempotency-Key", "value": "{{idempotencyKey}}-e2e-complete" }
+        ],
+        "url": "{{baseUrlDoctor}}/api/v1/doctors/appointments/{{appointmentId}}/complete"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "pm.test('Future complete is rejected', function () { pm.response.to.have.status(409); });"
+        ] }
+      }]
+    },
+    {
+      "name": "Patient List Notifications",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessTokenPatient}}" }],
+        "url": "{{baseUrlNotification}}/api/v1/notifications?page=0&size=20"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "pm.test('Notifications loaded', function () { pm.response.to.have.status(200); });",
+          "const body = pm.response.json();",
+          "pm.expect(body.success).to.eql(true);"
+        ] }
+      }]
+    }
+  ]
+}

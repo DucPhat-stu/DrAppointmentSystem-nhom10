@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchAppointments } from '../services/appointmentService.js';
 import styles from './Phase3Pages.module.css';
@@ -24,7 +24,7 @@ export default function MyAppointmentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  async function loadAppointments(nextStatus = status) {
+  const loadAppointments = useCallback(async (nextStatus = status) => {
     setLoading(true);
     setError('');
     try {
@@ -38,11 +38,11 @@ export default function MyAppointmentsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [status]);
 
   useEffect(() => {
     loadAppointments();
-  }, []);
+  }, [loadAppointments]);
 
   function applyFilters(event) {
     event.preventDefault();
