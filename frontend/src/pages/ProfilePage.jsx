@@ -32,9 +32,8 @@ export default function ProfilePage() {
       setLoadingRecords(true);
       const res = await fetchMedicalRecords();
       setRecords(res.data ?? []);
-    } catch (err) {
-      // Don't block page for records error
-      console.error('Failed to load records:', err);
+    } catch {
+      // Don't block the profile page if medical records fail to load
       setRecords([]);
     } finally {
       setLoadingRecords(false);

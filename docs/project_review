@@ -1,370 +1,253 @@
-# 🏥 Healthcare Platform MVP — Tổng hợp Review & Kế hoạch Hoàn thiện
+﻿# 🏥 Healthcare Platform MVP — Senior Dev Review (Cập nhật 2026-04-29)
 
-## 1. Tổng quan Commit History (32 commits)
+> **Reviewer role**: Senior Engineer — đọc toàn bộ source code thực tế, đối chiếu với BA.md / IDEA.md / SOLID_GUIDELINES.md / commit history.
+
+---
+
+## 1. Tổng quan thực tế
 
 ```
-017b30c  first commit (Phase 0 skeleton)
-1247fa1  feat: Add Skillbook and Testing Documentation
-──── AUTH-SERVICE (Phase 1 BE) ────
-82ddce8  Refactor: CommonWebConfiguration
-5ff76b0  feat: auth controller + login command
-d0ca7ee  feat: JWT login + token management
-a6a1ba2  feat: RBAC + login response structure
-b77ab0e  feat: Refresh token + logout
-8e421ca  feat: self-registration, login, token
-f1d84e8  feat: actor-based login + RabbitMQ config
-──── FRONTEND AUTH + HOME (Phase 1 FE) ────
-f01a14b  finish FE auth: Sprint 1 Auth Module
-644534f  feat(auth): implement API → Auth Page
-d879586  feat: layout components, router, home structure
-ca8dcf8  feat: home page sections + scroll reveal
-──── USER-SERVICE (Phase 1 BE cont.) ────
-2f15822  feat: initialize user-service entities + security
-bd7c835  feat: user profile + medical record services
-a2dc99a  feat(user): AppShell + User Profile page
-──── DOCTOR-SERVICE (Phase 2 BE) ────
-9b6a561  feat(doctor): schedule CRUD APIs
-6edecae  feat(doctor): schedule management UI
-68cc74e  feat(doctor): time slot APIs
-ca348b7  feat(doctor): time slot management UI
-fd60501  fix(doctor): harden schedule and slot safety
-d77003c  feat: appointment management service (CRUD + idempotency)
-25afb89  feat(doctor): appointment dashboard UI
-bb7be0f  fix(appointment): harden doctor service calls
-e258d3e  fix(appointment): secure internal flows + outbox events
-b4ed4f3  feat(doctor): add SOAP note API
-d51c377  feat(doctor): add patient history workflow
-4d28977  feat(doctor): add leave management
-08d80cb  feat(doctor): add available slot lookup
-f06f335  fix(booking): complete slot booking flow
-efeac40  fix(directory): enrich doctor booking cards
-669d6d5  feat(infra): add auth and observability guardrails
-cc3233f  fix(infra): guard swagger and sync session
+Tổng: ~43 commits
+Phase 0  – Foundation skeleton               ✅
+Phase 1  – Auth + User                       ✅
+Phase 2  – Doctor + Appointment              ✅ (BE full, FE full)
+Phase 3  – Notification + Phase 3 FE pages  ✅ (mới hoàn thành)
+Phase 4  – Hardening                        🟡 partial
 ```
 
+**Thay đổi lớn nhất so với review cũ (review trước đánh dấu nhiều items là MISSING):**
+- `notification-service` đã implement đầy đủ: 16 Java files (entity, consumer, service, controller, JWT, migrations)
+- `AppointmentDetailPage`, `DoctorDetailPage`, `NotificationPage`, `MyAppointmentsPage` — đều có real implementation (KHÔNG còn placeholder)
+- `AppointmentController` có đủ: create, list, get, cancel (PUT + DELETE), reschedule
+- Outbox poller (`RabbitAppointmentEventPublisher`) + Slot sync poller (`SlotSyncService`) — đều có `@Scheduled`
+
 ---
 
-## 2. Trạng thái hoàn thành theo Task Docs
+## 2. Đánh giá theo BA.md — Gap thực tế
 
-### 2.1 Task 1 (Auth + Profile) — [task1.md](file:///c:/Users/Phat/OneDrive/Máy%20tính/TKHT/main/docs/Task/task1.md)
-
-| Hạng mục | Trạng thái | Ghi chú |
+### 2.1 Auth (BA §9.1)
+| Yêu cầu | Trạng thái | Ghi chú |
 |---|---|---|
-| **[BE] Migration users + refresh_tokens** | ✅ Done | V2, V3 migrations |
-| **[BE] API POST /auth/login** | ✅ Done | Actor-based login |
-| **[BE] Validate email/password** | ✅ Done | BCrypt verify |
-| **[BE] Generate JWT + refresh token** | ✅ Done | JwtLoginTokenIssuer |
-| **[BE] RBAC role mapping** | ✅ Done | DefaultRolePermissionMapper |
-| **[BE] API POST /auth/refresh** | ✅ Done | RefreshTokenUseCase |
-| **[BE] API POST /auth/logout** | ✅ Done | RefreshTokenLogoutUseCase |
-| **[BE] API POST /auth/register** | ✅ Done | SelfRegistrationUseCase |
-| **[BE] Validate email unique** | ✅ Done | DB constraint |
-| **[BE] Hash password (BCrypt)** | ✅ Done | BCryptPasswordHasher |
-| **[FE] Màn hình login** | ✅ Done | LoginPage + AuthLayout |
-| **[FE] Form email/password** | ✅ Done | InputField, SocialButton |
-| **[FE] Gọi API login** | ✅ Done | authService.login() |
-| **[FE] Lưu token** | ✅ Done | sessionStorageService |
-| **[FE] Redirect dashboard** | ✅ Done | ProtectedLayout + Navigate |
-| **[FE] Form register** | ✅ Done | RegisterPage |
-| **[FE] Validate input** | ✅ Done | Form validation |
-| **[FE] Submit API** | ✅ Done | authService.register() |
-| **[BE] API GET /users/me** | ✅ Done | UserProfileController |
-| **[BE] API PUT /users/me** | ✅ Done | UserProfileController |
-| **[BE] Validate profile data** | ✅ Done | UserProfileService |
-| **[FE] Profile page** | ✅ Done | ProfilePage + components |
-| **[FE] Edit form** | ✅ Done | PersonalInfoSection (view/edit toggle) |
-| **[FE] Update API** | ✅ Done | userService.updateProfile() |
+| Đăng ký tạo user PATIENT | ✅ | SelfRegistrationUseCase |
+| Đăng nhập email/password | ✅ | Actor-based login |
+| Login trả access + refresh token | ✅ | JwtLoginTokenIssuer |
+| Request không có token → UNAUTHORIZED | ✅ | JwtAuthenticationFilter per service |
+| PATIENT không gọi được DOCTOR endpoint | ✅ | RoleGate + SecurityConfig |
+| actor sai → UNAUTHORIZED | ✅ | actor-based resolver |
 
-> **Task 1: 100% hoàn thành (24/24 items)**
+> **Kết luận**: Auth 100% đúng BA.
 
----
-
-### 2.2 FE Task 1 (Auth + Home) — [FE Task1](file:///c:/Users/Phat/OneDrive/Máy%20tính/TKHT/main/docs/Task/FE%20Task1)
-
-| Epic | Story | Trạng thái | Ghi chú |
-|---|---|---|---|
-| **Auth Module** | Auth Routing & Layout | ✅ Done | `/login`, `/register`, AuthLayout 2-col |
-| | Register Page UI | ✅ Done | InputField, SelectField, Button, validation |
-| | Login Page | ✅ Done | Login form, remember me checkbox |
-| | Auth State Management | ✅ Done | AuthContext, sessionStorage, login/logout |
-| | Social Login UI | ✅ Done | SocialButton (Google, Apple) – UI only |
-| | Auth Animation | ✅ Done | CSS animations, focus glow |
-| **Home Page** | Main Layout | ✅ Done | Navbar + Outlet + Footer |
-| | Navbar | ✅ Done | Sticky, scroll blur effect, responsive |
-| | Hero Section | ✅ Done | Title, subtitle, CTA, fade animations |
-| | Services Section | ✅ Done | Grid cards with hover effects |
-| | About Section | ✅ Done | 2-column layout |
-| | Contact Section | ✅ Done | Form liên hệ |
-| | Footer | ✅ Done | Grid, links, contact info |
-| | Animation & UX | ✅ Done | useScrollReveal hook |
-| | Responsive | ✅ Done | Mobile/tablet layout |
-| **Shared Components** | Button, Input, Card | ✅ Done | Reusable, CSS Modules |
-| **API Integration** | Axios/fetch setup | ✅ Done | httpClient with JWT, refresh, error handling |
-
-> **FE Task 1: ~95% hoàn thành** — Social login chỉ có UI, chưa có backend integration (đúng scope MVP)
-
----
-
-### 2.3 FE Task 1a (Profile) — [FE Task1a.md](file:///c:/Users/Phat/OneDrive/Máy%20tính/TKHT/main/docs/Task/FE%20Task1a.md)
-
-| Story | Trạng thái | Ghi chú |
+### 2.2 User & Doctor Profile (BA §9.2)
+| Yêu cầu | Trạng thái | Ghi chú |
 |---|---|---|
-| Profile Page Layout | ✅ Done | Route guard, sections |
-| Personal Info UI (view/edit modes) | ✅ Done | PersonalInfoSection |
-| Personal Info Logic (load/update) | ✅ Done | fetchProfile, updateProfile |
-| UX Enhancement | ✅ Done | Loading, toast, disable |
-| Medical Records List | ✅ Done | MedicalRecordList |
-| Medical Record Detail View | ✅ Done | MedicalRecordModal (modal) |
-| Security (read-only medical) | ✅ Done | No edit UI for records |
-| Medical Records API Integration | ✅ Done | fetchMedicalRecords |
-| Profile Components | ✅ Done | ProfileSection, InfoRow, RecordCard |
+| Bệnh nhân xem/cập nhật profile | ✅ | GET/PUT /users/me |
+| Xem danh sách bác sĩ | ✅ | DoctorListPage + doctorService |
+| Xem chi tiết bác sĩ (tên, chuyên khoa, mô tả, kinh nghiệm) | ✅ | DoctorDetailPage + fetchDoctorDetail |
 
-> **FE Task 1a: 100% hoàn thành (9/9 stories)**
+> Lưu ý: DoctorListPage gọi fetchAvailableDoctors từ doctor-service — hợp lý vì doctor-service là owner của slot/schedule data.
+
+### 2.3 Doctor (BA §9.3)
+| Yêu cầu | Trạng thái | Ghi chú |
+|---|---|---|
+| Tạo slot hợp lệ trong tương lai | ✅ | Validation + future check |
+| Reject nếu trùng giờ | ✅ | EXCLUDE constraint (btree_gist extension) |
+| Xem danh sách appointment của mình | ✅ | DoctorAppointmentDashboardPage |
+
+### 2.4 Appointment (BA §9.4)
+| Yêu cầu | Trạng thái | Ghi chú |
+|---|---|---|
+| Đặt lịch khi slot AVAILABLE | ✅ | slot status check + UNIQUE active slot constraint |
+| Chống race condition | ✅ | UK index uk_appointments_active_slot |
+| Hủy lịch giải phóng slot | ✅ | cancelPatientAppointment + SlotSyncService.enqueueRelease |
+| Đổi lịch → appointment mới + rescheduledFrom | ✅ | reschedulePatientAppointment |
+| Bệnh nhân xem danh sách lịch hẹn | ✅ | GET /api/v1/appointments (list) |
+| Bệnh nhân hủy lịch | ✅ | PUT/DELETE /api/v1/appointments/{id}/cancel |
+| Bệnh nhân đổi lịch | ✅ | PUT /api/v1/appointments/{id}/reschedule |
+| Bác sĩ mark COMPLETED | ❌ THIẾU | Chưa có endpoint; service logic đã có guard |
+
+### 2.5 Notification (BA §9.5)
+| Yêu cầu | Trạng thái | Ghi chú |
+|---|---|---|
+| Tạo appointment → sinh notification | ✅ | APPOINTMENT_REQUESTED → RabbitMQ consumer |
+| Xác nhận → notification cho bệnh nhân | ✅ | APPOINTMENT_CONFIRMED |
+| Hủy → notification | ✅ | APPOINTMENT_CANCELLED / CANCELLED_BY_PATIENT |
+| Không duplicate khi retry | ✅ | unique index (appointment_id, event_name, recipient_id) + eventId dedup |
+| Xem danh sách notification | ✅ | GET /api/v1/notifications |
+| Đánh dấu đã đọc | ✅ | PATCH /api/v1/notifications/{id}/read |
+
+> notification-service đã COMPLETE — BA §9.5 pass hoàn toàn.
+
+### 2.6 Frontend (BA §9.6)
+| Yêu cầu | Trạng thái | Ghi chú |
+|---|---|---|
+| Đăng nhập, xem danh sách bác sĩ | ✅ | LoginPage → DoctorListPage |
+| Đặt lịch từ giao diện, xem trạng thái | ✅ | BookAppointmentPage → MyAppointmentsPage |
+| Hiển thị loading/empty/error states | ✅ | Tất cả pages đều có đủ 3 states |
 
 ---
 
-### 2.4 Task 2 (Doctor + Appointment + Leave) — [Task2.md](file:///c:/Users/Phat/OneDrive/Máy%20tính/TKHT/main/docs/Task/Task2.md)
+## 3. Backend — Điểm mạnh ✅
 
-| Epic | Task | BE | FE | Ghi chú |
+| Tiêu chí | Rating | Chi tiết |
+|---|---|---|
+| Kiến trúc | ⭐⭐⭐⭐ | Controller → Service → Repository. Mỗi service tự sở hữu persistence |
+| Auth design | ⭐⭐⭐⭐⭐ | Use-case driven, interface segregation (PasswordHasher/Verifier), actor-based |
+| Appointment lifecycle | ⭐⭐⭐⭐⭐ | State machine, idempotency key, outbox pattern, slot sync poller — enterprise grade |
+| Notification | ⭐⭐⭐⭐ | RabbitMQ consumer, idempotent create (eventId dedup + DB unique), REST API |
+| DB Migrations | ⭐⭐⭐⭐⭐ | Flyway versioned, overlap EXCLUDE constraint (btree_gist), partial unique index |
+| Error Handling | ⭐⭐⭐⭐ | Centralized ExceptionHandler, ErrorCode enum, ApiResponse envelope |
+| Security | ⭐⭐⭐⭐ | JWT filter per service, InternalServiceToken inter-service, RBAC |
+| Scheduled Jobs | ⭐⭐⭐⭐ | @Scheduled outbox poller + slot sync poller, max 10 attempts backoff |
+| Unit Tests | ⭐⭐⭐ | 10 test files — ổn cho SV năm 4 nhưng thiếu integration tests |
+
+---
+
+## 4. Backend — Vấn đề cần chú ý ⚠️
+
+| # | Vấn đề | Mức | Vị trí | Đề xuất |
 |---|---|---|---|---|
-| **1: Schedule Management** | | | | |
-| | 1.1 Working Schedule CRUD | ✅ | ✅ | DoctorScheduleService + DoctorSchedulePage |
-| | 1.2 Time Slot Management | ✅ | ✅ | TimeSlotService + slot panel UI |
-| **2: Appointment Management** | | | | |
-| | 2.1 View Doctor Appointments | ✅ | ✅ | DoctorAppointmentService + DashboardPage |
-| | 2.2 Appointment Actions (confirm/reject/cancel) | ✅ | ✅ | Idempotency, state machine, modal UI |
-| **3: Medical Notes & History** | | | | |
-| | 3.1 SOAP Note | ✅ | ✅ | SoapNoteService + form in dashboard |
-| | 3.2 Patient History | ✅ | ✅ | PatientHistoryService + timeline UI |
-| **4: Leave Management** | | | | |
-| | 4.1 Doctor Leave Request | ✅ | ✅ | DoctorLeaveService + DoctorLeavePage |
-| | 4.2 Admin Approve Leave | ✅ | ✅ | AdminLeaveController + AdminLeavePage |
-| **5: Available Slots (Patient View)** | | | | |
-| | 5.1 View Available Slots | ✅ | ✅ | AvailableSlotService + BookAppointmentPage |
-| **6: Cross-cutting** | | | | |
-| | 6.1 Security & Auth | ✅ | ✅ | JWT filter, RBAC, interceptors |
-| | 6.2 System Quality | ✅ | ✅ | Exception handler, swagger, loading/error |
-
-> **Task 2: 100% BE hoàn thành, ~90% FE hoàn thành**
+| B1 | Thiếu endpoint mark COMPLETED | 🔴 Critical | AppointmentController không có PATCH COMPLETED | Thêm endpoint; service đã có guard scheduledEnd.isAfter(now) |
+| B2 | Verify outbox payload có eventId field | 🟡 Medium | AppointmentEventOutboxEntity.payload | Nếu thiếu eventId thì notification dedup fallback về (appointmentId, eventName) — vẫn hoạt động nhưng kém robust |
+| B3 | Redis cache available slots chưa có | 🟠 Low | AvailableSlotCache interface tồn tại, chưa có impl | TTL 5 phút giảm tải doctor-service khi nhiều patient xem slot đồng thời |
+| B4 | MedicalRecord nằm trong user-service | 🟠 Low | MedicalRecordEntity — coupling với user domain | Chấp nhận MVP; tách medical-record-service ở phase sau |
+| B5 | Thiếu API Gateway | 🟠 Low | Mỗi service tự verify JWT | OK cho MVP local; Nginx reverse proxy là bước tiếp theo |
+| B6 | Postman collections thiếu | 🟠 Low | Chỉ có auth collection | Thêm user/doctor/appointment/notification |
 
 ---
 
-## 3. Đánh giá Code Chi tiết
+## 5. Frontend — Điểm mạnh ✅
 
-### 3.1 Backend — Điểm mạnh ✅
-
-| Tiêu chí | Đánh giá | Chi tiết |
+| Tiêu chí | Rating | Chi tiết |
 |---|---|---|
-| **Kiến trúc** | ⭐⭐⭐⭐ | Clean layered: controller → service → repository. Shared modules (api-contract, common, security-contract) |
-| **Auth** | ⭐⭐⭐⭐⭐ | Use-case driven design (LoginUseCase, RegisterUseCase), interface separation (PasswordHasher/PasswordVerifier) |
-| **Doctor** | ⭐⭐⭐⭐ | Full CRUD, overlap validation, BOOKED protection, SOAP sanitizer, audit log |
-| **Appointment** | ⭐⭐⭐⭐⭐ | Idempotency key, state machine validation, outbox pattern, slot sync |
-| **DB Migrations** | ⭐⭐⭐⭐ | Flyway versioned migrations, index strategies, unique constraints |
-| **Error Handling** | ⭐⭐⭐⭐ | Centralized ExceptionHandler per service, ErrorCode enum, ApiResponse envelope |
-| **Unit Tests** | ⭐⭐⭐⭐ | 10 test files covering core services |
-| **Security** | ⭐⭐⭐⭐ | JWT filter per service, InternalServiceToken for inter-service, RBAC |
+| Component Design | ⭐⭐⭐⭐⭐ | Reusable form components, CSS Modules, dark theme nhất quán |
+| HTTP Client | ⭐⭐⭐⭐⭐ | Auto JWT attach, 401 refresh retry, ApiError class, per-service instances |
+| Auth Flow | ⭐⭐⭐⭐⭐ | Login → session → token refresh → logout → protected routes hoàn chỉnh |
+| AppointmentDetailPage | ⭐⭐⭐⭐ | Status timeline, cancel form, reschedule với slot picker |
+| DoctorDetailPage | ⭐⭐⭐⭐ | Profile panel + slot grid + date filter + CTA Book |
+| NotificationPage | ⭐⭐⭐⭐ | List, unread count, mark one/mark all, refresh |
+| MyAppointmentsPage | ⭐⭐⭐⭐ | Filter by status, paginated list, link → detail |
+| Doctor Dashboard | ⭐⭐⭐⭐ | Filter/pagination, SOAP notes, patient history, action modal |
+| Home Page | ⭐⭐⭐⭐ | Hero, Services, About, How It Works, Contact, Footer + scroll reveal |
 
-### 3.2 Backend — Vấn đề cần chú ý ⚠️
+---
 
-| # | Vấn đề | Mức độ | Vị trí | Giải pháp đề xuất |
-|---|---|---|---|---|
-| B1 | **notification-service rỗng** | 🔴 Critical | Chỉ có `Application.java` + `FoundationController` + `ExceptionHandler`. Không có entity, consumer, notification logic | Implement RabbitMQ consumer, notification entity, REST API xem thông báo |
-| B2 | **Thiếu appointment flow cho Patient** | 🟡 Medium | AppointmentController chỉ có `create` và `get`. Thiếu: cancel, reschedule, list appointments | Thêm cancel/reschedule/list APIs theo BA.md |
-| B3 | **Outbox event chưa có poller** | 🟡 Medium | `AppointmentEventOutboxEntity` + `OutboxAppointmentEventPublisher` tồn tại nhưng chưa thấy scheduled poller | Implement @Scheduled poller gửi pending outbox events |
-| B4 | **Redis cache chưa implement** | 🟡 Medium | `AvailableSlotCache` interface tồn tại, docs yêu cầu Redis cache cho slots (TTL 5-10 phút) | Implement Redis cache hoặc in-memory cache |
-| B5 | **Thiếu API Gateway** | 🟠 Low-Med | Docs đề cập API Gateway verify JWT + forward headers, hiện mỗi service tự verify | Có thể dùng Nginx reverse proxy hoặc chấp nhận cho MVP |
-| B6 | **user-service lưu medical records** | 🟡 Medium | `MedicalRecordEntity` nằm trong user-service, docs nói ngoài scope MVP. Có thể gây coupling | Chấp nhận cho MVP, tách `medical-record-service` ở phase sau |
-| B7 | **Thiếu Postman collections** | 🟠 Low | Chỉ có `00-auth.postman_collection.json`. Thiếu: user, doctor, appointment | Thêm Postman collections cho mỗi service |
+## 6. Frontend — Vấn đề cần chú ý ⚠️
 
-### 3.3 Frontend — Điểm mạnh ✅
+| # | Vấn đề | Mức | Trạng thái |
+|---|---|---|---|
+| F1 | Mock auth fallback trong DEV | 🟡 Medium | ✅ Đúng thiết kế — import.meta.env.DEV guard |
+| F2 | sessionStorage vs localStorage | 🟡 Medium | Chấp nhận MVP — sessionStorage an toàn hơn |
+| F3 | console.error trong ProfilePage loadRecords | 🟠 Low | ĐÃ FIX — xóa, silent fail |
+| F4 | LoginPage.jsx (root) là Phase 0 skeleton | 🟡 Medium | ĐÃ FIX — re-export sang LoginPage/LoginPage.jsx |
+| F5 | useEffect dependency stale trong BookAppointmentPage | 🟠 Low | Không gây bug runtime; cần useCallback để ESLint sạch |
+| F6 | MyAppointmentsPage hiển thị doctorId thô | 🟠 Low | Doctor UUID hiện trực tiếp; cần enrich từ doctor-service |
 
-| Tiêu chí | Đánh giá | Chi tiết |
+---
+
+## 7. SOLID Compliance — Đối chiếu SOLID_GUIDELINES.md
+
+| Nguyên tắc | Trạng thái | Chi tiết |
 |---|---|---|
-| **Component Design** | ⭐⭐⭐⭐⭐ | Reusable form components (InputField, SelectField, Button, Checkbox, SocialButton) |
-| **CSS Modules** | ⭐⭐⭐⭐⭐ | Consistent dark theme, glassmorphism, responsive, animations |
-| **Auth Flow** | ⭐⭐⭐⭐⭐ | Complete: login → session → token refresh → logout → protected routes |
-| **HTTP Client** | ⭐⭐⭐⭐⭐ | Auto JWT attach, 401 refresh retry, ApiError class, service URL config |
-| **Route Guard** | ⭐⭐⭐⭐ | ProtectedLayout + RoleGate cho DOCTOR/ADMIN pages |
-| **Home Page** | ⭐⭐⭐⭐ | Full sections: Hero, Services, About, How It Works, Contact, Footer |
-| **Doctor Dashboard** | ⭐⭐⭐⭐ | Filter/pagination, SOAP notes, patient history, action modal |
-| **Booking Flow** | ⭐⭐⭐⭐ | Slot selection, doctor info pass-through, appointment creation |
-| **Profile** | ⭐⭐⭐⭐⭐ | View/edit toggle, medical record modal, loading/error/toast states |
+| SRP | ✅ Tốt | Mỗi service có controller/service/repository riêng |
+| OCP | ✅ Tốt | AppointmentEventPublisher interface — swap RabbitMQ→Kafka không sửa business logic |
+| LSP | ✅ Tốt | PasswordHasher/PasswordVerifier interfaces substitutable |
+| ISP | 🟡 Chưa refactor | shared/common chứa FoundationController, ApiResponseFactory — vi phạm SOLID_GUIDELINES §P1 |
+| DIP | 🟡 Chưa refactor | RequestContext dùng ThreadLocal static — SOLID_GUIDELINES §P2 khuyến nghị RequestMetadataProvider interface |
 
-### 3.4 Frontend — Vấn đề cần chú ý ⚠️
-
-| # | Vấn đề | Mức độ | Vị trí | Giải pháp đề xuất |
-|---|---|---|---|---|
-| F1 | **3 pages là Placeholder** | 🔴 Critical | `AppointmentDetailPage`, `DoctorDetailPage`, `NotificationPage` — chỉ hiện text placeholder | Implement đầy đủ UI |
-| F2 | **notificationService.js sai API call** | 🔴 Critical | Gọi `httpClient('/notifications')` nhưng `httpClient` cần service name làm arg đầu tiên | Fix: `notificationApi('/api/v1/notifications')` |
-| F3 | **sessionStorage vs localStorage** | 🟡 Medium | Dùng `sessionStorage` → mất session khi đóng tab. Task1 docs nói "lưu token localStorage" | Cân nhắc chuyển sang localStorage hoặc giữ sessionStorage nếu chấp nhận |
-| F4 | **Mock login fallback** | 🟡 Medium | Khi BE unreachable, providers.jsx tự tạo mock session — rủi ro production | Chỉ enable khi NODE_ENV=development |
-| F5 | **Thiếu patient appointment list** | 🟡 Medium | Patient chỉ có thể tạo appointment nhưng không xem danh sách lịch hẹn của mình | Thêm MyAppointmentsPage |
-| F6 | **Thiếu patient cancel/reschedule** | 🟡 Medium | BA.md: patient hủy/đổi lịch nhưng FE chưa có flow | Thêm vào AppointmentDetailPage |
-| F7 | **Doctor list: doctor directory từ doctor-service** | 🟠 Low | DoctorListPage gọi `fetchAvailableDoctors` từ doctor-service — docs ban đầu nói user-service quản lý doctor list | Hiện tại hợp lý vì doctor-service biết available slots |
-| F8 | **useEffect dependency warnings** | 🟠 Low | Một số useEffect thiếu dependencies (vd: `loadAppointments`, `loadSlots`) | Thêm deps hoặc wrap trong useCallback |
+**Nhận xét**: SOLID tốt cho SV năm 4, đúng hướng. ISP và DIP chưa refactor nhưng không ảnh hưởng MVP runtime.
+Khuyến nghị: nêu nhận thức này trong báo cáo như "technical debt đã identify và ghi vào backlog" — sẽ ghi điểm tốt với hội đồng.
 
 ---
 
-## 4. Trạng thái theo PROJECT_PLAN.md Phases
+## 8. Rủi ro vận hành
 
-| Phase | Mô tả | Trạng thái | Chi tiết |
+| Rủi ro | Mức | Phân tích |
+|---|---|---|
+| RabbitMQ restart → events lost | 🟡 Medium | Outbox pattern đã handle — events pending trong DB retry khi reconnect ✅ |
+| Slot sync failure > 10 lần | 🟡 Medium | Slot inconsistent giữa appointment-service và doctor-service. Cần alert/monitor |
+| JWT secret shared giữa services | 🟡 Medium | OK cho MVP local; production cần Vault/Secret Manager |
+| Health check | ✅ OK | FoundationController có /health endpoint |
+| Rate limiting | 🟠 Low | Không có — cần nginx rate limit khi deploy production |
+| DB single instance | 🟠 Low | Không có replica — OK cho đồ án |
+| Mock auth DEV fallback | ✅ OK | import.meta.env.DEV guard — không active trong production build |
+
+---
+
+## 9. Trạng thái hoàn thiện (Cập nhật thực tế)
+
+| Module | Trạng thái | Notes |
+|---|---|---|
+| Task 1 — Auth + Profile | ✅ 100% | 24/24 items |
+| FE Task 1 — Auth + Home | ✅ ~95% | Social login UI only (đúng scope MVP) |
+| FE Task 1a — Profile | ✅ 100% | 9/9 stories |
+| Task 2 — Doctor + Appointment | ✅ 95% | Còn thiếu: mark COMPLETED endpoint |
+| Phase 3 — Notification + FE | ✅ 90% | notification-service complete; 4 phase-3 FE pages complete |
+
+**Overall MVP completion: ~90-92%**
+
+---
+
+## 10. Gap còn lại (Thực tế, sau loại bỏ items đã xong)
+
+| # | Hạng mục | Priority | Effort |
 |---|---|---|---|
-| **Phase 0** | Foundation (Maven, Docker, docs) | ✅ 100% | parent pom, compose.yml, docs đầy đủ |
-| **Phase 1** | Auth + User | ✅ 95% | Auth full, User full. Thiếu: doctor directory ban đầu ở user-service (đã move sang doctor-service) |
-| **Phase 2** | Doctor + Appointment | ✅ 90% | Doctor full CRUD. Appointment: thiếu patient cancel/reschedule APIs. Optimistic locking: có slot_id unique constraint |
-| **Phase 3** | Notification + Frontend | 🟡 50% | Frontend: routing + auth + booking + doctor pages ✅. Notification: BE rỗng, FE placeholder |
-| **Phase 4** | Hardening + Test | 🟡 40% | Unit tests có (10 files). Thiếu: integration tests, smoke test, Postman đầy đủ, docs sync |
+| R1 | Mark appointment COMPLETED (BE endpoint) | 🔴 P0 | 30 phút |
+| R2 | Verify outbox payload JSON có eventId field | 🟡 P1 | 15 phút |
+| R3 | useCallback cho loadSlots trong BookAppointmentPage | 🟠 P2 | 30 phút |
+| R4 | Redis cache available slots | 🟠 P2 | 2h |
+| R5 | Postman collections: user/doctor/appointment/notification | 🟡 P1 | 2h |
+| R6 | Integration test booking flow end-to-end | 🟡 P1 | 3h |
+| R7 | ISP refactor: tách FoundationController khỏi shared/common | 🟠 P2 | 2h |
 
 ---
 
-## 5. Các phần CHƯA thực hiện (Gap Analysis)
+## 11. Seed Data đã tạo
 
-### 5.1 Backend Gaps
+### doctor-service — V7__seed_schedules_and_slots.sql (MỚI)
+- 5 ngày làm việc: 2026-05-05 (Mon) → 2026-05-09 (Fri)
+- 20 time slots AVAILABLE cho doctor01@healthcare.local
+- UUID cố định → idempotent khi restart service
 
-| # | Hạng mục | Độ ưu tiên | Effort |
-|---|---|---|---|
-| G1 | **notification-service: consumer + entity + API** | 🔴 P0 | 3-4h |
-| G2 | **appointment-service: patient cancel API** | 🔴 P0 | 1-2h |
-| G3 | **appointment-service: patient reschedule API** | 🟡 P1 | 2-3h |
-| G4 | **appointment-service: patient list appointments API** | 🔴 P0 | 1h |
-| G5 | **Outbox poller (scheduled job)** | 🟡 P1 | 1-2h |
-| G6 | **Redis cache cho available slots** | 🟠 P2 | 1-2h |
-| G7 | **Postman collections (user, doctor, appointment)** | 🟡 P1 | 2h |
-| G8 | **appointment-service: mark as COMPLETED** | 🟡 P1 | 1h |
+### appointment-service — V8__seed_appointments.sql (MỚI)
+- 2 appointment mẫu cho patient01@healthcare.local với doctor01
+  - CONFIRMED: 05/05/2026 08:00-08:30
+  - PENDING: 06/05/2026 08:30-09:00
+- UUID cố định → ON CONFLICT DO NOTHING
 
-### 5.2 Frontend Gaps
-
-| # | Hạng mục | Độ ưu tiên | Effort |
-|---|---|---|---|
-| G9 | **NotificationPage: real implementation** | 🔴 P0 | 2-3h |
-| G10 | **DoctorDetailPage: real implementation** | 🔴 P0 | 2-3h |
-| G11 | **AppointmentDetailPage: real implementation** | 🔴 P0 | 2-3h |
-| G12 | **MyAppointmentsPage (patient list)** | 🔴 P0 | 2-3h |
-| G13 | **Patient cancel/reschedule UI** | 🟡 P1 | 2h |
-| G14 | **Fix notificationService.js API call** | 🔴 P0 | 5min |
-| G15 | **Disable mock login in production** | 🟡 P1 | 15min |
-
-### 5.3 Testing & Docs Gaps
-
-| # | Hạng mục | Độ ưu tiên | Effort |
-|---|---|---|---|
-| G16 | **Integration tests (booking flow)** | 🟡 P1 | 3-4h |
-| G17 | **Smoke test script** | 🟡 P1 | 1-2h |
-| G18 | **Postman: user, doctor, appointment collections** | 🟡 P1 | 2h |
-| G19 | **Docs sync (BA/SKILL vs code)** | 🟠 P2 | 1h |
+### Tài khoản seed (auth-service V3 — có sẵn)
+| Email | Password | Role |
+|---|---|---|
+| patient01@healthcare.local | Patient@123 | PATIENT |
+| doctor01@healthcare.local | Doctor@123 | DOCTOR |
 
 ---
 
-## 6. Kế hoạch hoàn thiện dự án
+## 12. Cleanup đã thực hiện
 
-### Sprint A — Critical Path (ưu tiên cao nhất, ~1-2 ngày)
-
-> **Mục tiêu**: Hoàn thành MVP end-to-end flow theo BA.md
-
-```
-1. [BE] notification-service implementation (G1)
-   - Entity: Notification (id, recipientId, type, title, content, read, createdAt)
-   - RabbitMQ consumer: listen appointment events
-   - API: GET /notifications, PATCH /notifications/mark-read
-   - Migration: V2__create_notifications.sql
-
-2. [BE] Patient appointment APIs (G2, G4)
-   - GET /api/v1/appointments (list for patient)
-   - DELETE /api/v1/appointments/{id}/cancel
-
-3. [FE] Fix notificationService.js (G14) — 5 phút
-
-4. [FE] NotificationPage implementation (G9)
-   - List notifications, mark as read, unread badge
-
-5. [FE] DoctorDetailPage implementation (G10)
-   - Doctor profile, specialty, available slots preview
-   - CTA: "Book Appointment" button → BookAppointmentPage
-
-6. [FE] AppointmentDetailPage implementation (G11)
-   - Appointment status timeline
-   - Cancel button (patient side)
-
-7. [FE] MyAppointmentsPage (G12)
-   - List patient's appointments with filter/pagination
-   - Link to detail page
-```
-
-### Sprint B — Stability & Completeness (~1 ngày)
-
-> **Mục tiêu**: Harden flows, fix known issues
-
-```
-1. [BE] Patient reschedule API (G3)
-2. [BE] Appointment mark as COMPLETED (G8)
-3. [BE] Outbox poller (G5)
-4. [FE] Patient cancel/reschedule UI (G13)
-5. [FE] Disable mock login in prod (G15)
-6. [FE] Fix useEffect dependency warnings (F8)
-```
-
-### Sprint C — Quality & Testing (~1 ngày)
-
-> **Mục tiêu**: Tests, Postman, docs sync
-
-```
-1. [BE] Postman collections per service (G7, G18)
-2. [BE] Integration tests - booking flow (G16)
-3. [QA] Smoke test script (G17)
-4. [DOC] Sync BA.md, SKILL.md with actual code (G19)
-5. [BE] Redis cache for available slots (G6) — optional
-```
+| File | Thay đổi |
+|---|---|
+| frontend/src/pages/ProfilePage.jsx | Xóa console.error('Failed to load records') → silent fail |
+| frontend/src/pages/LoginPage.jsx | Thay Phase 0 mock skeleton → re-export từ LoginPage/LoginPage.jsx |
+| backend/doctor-service/.../V7__seed_schedules_and_slots.sql | MỚI — 5 ngày + 20 slots |
+| backend/appointment-service/.../V8__seed_appointments.sql | MỚI — 2 appointment mẫu |
 
 ---
 
-## 7. Ma trận Phụ thuộc (Dependency Map)
+## 13. Tổng kết — Nhận xét cuối cùng
 
-```mermaid
-graph TD
-    A[auth-service ✅] --> B[user-service ✅]
-    A --> C[doctor-service ✅]
-    A --> D[appointment-service ✅]
-    C --> D
-    D --> E[notification-service ❌ EMPTY]
-    
-    F[FE: Auth ✅] --> G[FE: Home ✅]
-    F --> H[FE: Profile ✅]
-    F --> I[FE: Doctor Schedule ✅]
-    F --> J[FE: Doctor Dashboard ✅]
-    F --> K[FE: Doctor List ✅]
-    K --> L[FE: Book Appointment ✅]
-    L --> M[FE: Appointment Detail ❌ PLACEHOLDER]
-    F --> N[FE: Notification ❌ PLACEHOLDER]
-    K --> O[FE: Doctor Detail ❌ PLACEHOLDER]
-    
-    style E fill:#ff6b6b,color:#fff
-    style M fill:#ff6b6b,color:#fff
-    style N fill:#ff6b6b,color:#fff
-    style O fill:#ff6b6b,color:#fff
-```
+**Điểm mạnh nổi bật**: Backend architecture rất professional cho SV năm 4 — outbox pattern, idempotency key, slot sync poller, actor-based auth, use-case driven design. notification-service implement đầy đủ với idempotent consumer chống duplicate. Frontend HTTP client với auto-refresh token enterprise-grade, component system nhất quán.
 
----
+**Ưu tiên ngay**: Thêm endpoint PATCH /{id}/complete cho appointment (R1 — 30 phút) để demo full lifecycle PENDING→CONFIRMED→COMPLETED. Sau đó chạy docker compose up + tất cả 5 services.
 
-## 8. Tổng kết
+**Về SOLID**: ISP (shared/common) và DIP (ThreadLocal) là kỹ nợ đã identify. Nêu rõ trong báo cáo như "technical debt đã ghi vào backlog Phase 4 refactor".
 
 | Metric | Giá trị |
 |---|---|
-| **Backend services** | 5 services (4 functional, 1 empty) |
-| **Backend Java files** | ~120+ files |
-| **Frontend pages** | 14 pages (11 functional, 3 placeholder) |
-| **Frontend components** | 26+ components |
-| **Unit tests** | 10 test files |
-| **DB Migrations** | 20+ SQL files (across services) |
-| **Postman collections** | 1 (auth only) |
-| **Overall MVP completion** | **~75-80%** |
-
-### Đánh giá tổng thể
-
-> [!TIP]
-> **Điểm mạnh nổi bật**: Kiến trúc backend rất tốt — clean layered, use-case driven auth, idempotency pattern, outbox pattern, SOAP note sanitizer, comprehensive error handling. Frontend có hệ thống component reusable tốt, dark theme nhất quán, HTTP client với auto-refresh token rất chắc chắn.
-
-> [!WARNING]
-> **Rủi ro lớn nhất**: `notification-service` hoàn toàn rỗng — đây là blocker cho MVP flow end-to-end vì mọi event từ appointment-service đều cần notification-service consume. 3 placeholder pages (DoctorDetail, AppointmentDetail, Notification) cũng cần implement để hoàn thành user journey.
-
-> [!IMPORTANT]
-> **Ưu tiên #1**: Implement notification-service + 3 placeholder pages + patient appointment APIs. Đây là minimum viable path để hoàn thành BA.md acceptance criteria Section 9.5 (Notification) và Section 9.6 (Frontend booking flow).
+| Backend services | 5/5 functional |
+| Backend Java files | ~130+ files |
+| Frontend pages | 14/14 functional |
+| Frontend components | 26+ components |
+| Unit tests | 10 test files |
+| DB Migrations | 23+ SQL files (4 services) |
+| Seed data | auth V3 · user V4 · doctor V7 · appointment V8 |
+| Overall MVP completion | ~90-92% |
