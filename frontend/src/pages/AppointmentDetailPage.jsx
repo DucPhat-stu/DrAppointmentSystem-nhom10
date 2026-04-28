@@ -118,7 +118,13 @@ export default function AppointmentDetailPage() {
       setSlots([]);
       setMessage('Appointment rescheduled and sent for doctor confirmation.');
     } catch (err) {
-      setError(err.message ?? 'Unable to reschedule appointment');
+      if (err.status === 409) {
+        await loadSlots();
+        setSelectedSlotId('');
+        setError('Selected slot is no longer available. Please choose another slot.');
+      } else {
+        setError(err.message ?? 'Unable to reschedule appointment');
+      }
     } finally {
       setSaving(false);
     }

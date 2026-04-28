@@ -10,9 +10,11 @@ import com.healthcare.appointment.dto.CreateAppointmentRequest;
 import com.healthcare.appointment.dto.DoctorSlotResponse;
 import com.healthcare.appointment.dto.RescheduleAppointmentRequest;
 import com.healthcare.appointment.entity.AppointmentActionIdempotencyEntity;
+import com.healthcare.appointment.entity.AppointmentChangeHistoryEntity;
 import com.healthcare.appointment.entity.AppointmentEntity;
 import com.healthcare.appointment.events.AppointmentEventPublisher;
 import com.healthcare.appointment.repository.AppointmentActionIdempotencyJpaRepository;
+import com.healthcare.appointment.repository.AppointmentChangeHistoryJpaRepository;
 import com.healthcare.appointment.repository.AppointmentJpaRepository;
 import com.healthcare.shared.api.ErrorCode;
 import com.healthcare.shared.common.exception.ApiException;
@@ -40,17 +42,20 @@ public class AppointmentService {
 
     private final AppointmentJpaRepository appointmentRepository;
     private final AppointmentActionIdempotencyJpaRepository idempotencyRepository;
+    private final AppointmentChangeHistoryJpaRepository changeHistoryRepository;
     private final AppointmentEventPublisher eventPublisher;
     private final DoctorSlotClient doctorSlotClient;
     private final SlotSyncService slotSyncService;
 
     public AppointmentService(AppointmentJpaRepository appointmentRepository,
                               AppointmentActionIdempotencyJpaRepository idempotencyRepository,
+                              AppointmentChangeHistoryJpaRepository changeHistoryRepository,
                               AppointmentEventPublisher eventPublisher,
                               DoctorSlotClient doctorSlotClient,
                               SlotSyncService slotSyncService) {
         this.appointmentRepository = appointmentRepository;
         this.idempotencyRepository = idempotencyRepository;
+        this.changeHistoryRepository = changeHistoryRepository;
         this.eventPublisher = eventPublisher;
         this.doctorSlotClient = doctorSlotClient;
         this.slotSyncService = slotSyncService;
@@ -264,6 +269,9 @@ public class AppointmentService {
         }
 
         UUID oldSlotId = appointment.getSlotId();
+        OffsetDateTime oldScheduledStart = appointment.getScheduledStart();
+        OffsetDateTime oldScheduledEnd = appointment.getScheduledEnd();
+        AppointmentStatus oldStatus = appointment.getStatus();
         appointment.setSlotId(newSlot.id());
         appointment.setScheduledStart(newSlot.startTime());
         appointment.setScheduledEnd(newSlot.endTime());
@@ -276,6 +284,15 @@ public class AppointmentService {
         if (oldSlotId != null) {
             slotSyncService.enqueueRelease(saved.getId(), oldSlotId);
         }
+        changeHistoryRepository.save(AppointmentChangeHistoryEntity.reschedule(
+                patientId,
+                saved,
+                oldSlotId,
+                oldScheduledStart,
+                oldScheduledEnd,
+                oldStatus,
+                normalizeReason(request.reason())
+        ));
         recordIdempotency(saved, "PATIENT_RESCHEDULE", idempotencyKey, AppointmentStatus.PENDING);
         eventPublisher.publishStatusChanged("APPOINTMENT_RESCHEDULED", saved);
         return toResponse(saved);
@@ -306,6 +323,7 @@ public class AppointmentService {
         }
 
         validateTransition(appointment.getStatus(), targetStatus);
+        validateCompletionTime(appointment, targetStatus);
         appointment.setStatus(targetStatus);
         if (targetStatus == AppointmentStatus.CANCELLED || targetStatus == AppointmentStatus.REJECTED) {
             appointment.setCancellationReason(reason);
@@ -345,6 +363,12 @@ public class AppointmentService {
     private void validatePatientReschedule(AppointmentEntity appointment) {
         if (appointment.getStatus() != AppointmentStatus.PENDING && appointment.getStatus() != AppointmentStatus.CONFIRMED) {
             throw new ApiException(ErrorCode.CONFLICT, "Only pending or confirmed appointments can be rescheduled");
+        }
+    }
+
+    private void validateCompletionTime(AppointmentEntity appointment, AppointmentStatus targetStatus) {
+        if (targetStatus == AppointmentStatus.COMPLETED && appointment.getScheduledEnd().isAfter(OffsetDateTime.now())) {
+            throw new ApiException(ErrorCode.CONFLICT, "Future appointments cannot be completed");
         }
     }
 

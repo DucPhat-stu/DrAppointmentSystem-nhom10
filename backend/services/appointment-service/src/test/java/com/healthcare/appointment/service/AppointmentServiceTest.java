@@ -6,15 +6,18 @@ import com.healthcare.appointment.dto.AppointmentActionRequest;
 import com.healthcare.appointment.dto.CreateAppointmentRequest;
 import com.healthcare.appointment.dto.DoctorSlotResponse;
 import com.healthcare.appointment.dto.RescheduleAppointmentRequest;
+import com.healthcare.appointment.entity.AppointmentChangeHistoryEntity;
 import com.healthcare.appointment.entity.AppointmentEntity;
 import com.healthcare.appointment.events.AppointmentEventPublisher;
 import com.healthcare.appointment.repository.AppointmentActionIdempotencyJpaRepository;
+import com.healthcare.appointment.repository.AppointmentChangeHistoryJpaRepository;
 import com.healthcare.appointment.repository.AppointmentJpaRepository;
 import com.healthcare.shared.api.ErrorCode;
 import com.healthcare.shared.common.exception.ApiException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -27,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,6 +42,9 @@ class AppointmentServiceTest {
 
     @Mock
     private AppointmentActionIdempotencyJpaRepository idempotencyRepository;
+
+    @Mock
+    private AppointmentChangeHistoryJpaRepository changeHistoryRepository;
 
     @Mock
     private AppointmentEventPublisher eventPublisher;
@@ -52,7 +59,7 @@ class AppointmentServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new AppointmentService(appointmentRepository, idempotencyRepository, eventPublisher, doctorSlotClient, slotSyncService);
+        service = new AppointmentService(appointmentRepository, idempotencyRepository, changeHistoryRepository, eventPublisher, doctorSlotClient, slotSyncService);
     }
 
     @Test
@@ -170,6 +177,8 @@ class AppointmentServiceTest {
         UUID doctorId = UUID.randomUUID();
         UUID appointmentId = UUID.randomUUID();
         AppointmentEntity appointment = appointment(doctorId, appointmentId, AppointmentStatus.CONFIRMED);
+        appointment.setScheduledStart(OffsetDateTime.now().minusHours(2));
+        appointment.setScheduledEnd(OffsetDateTime.now().minusHours(1));
         when(appointmentRepository.findByIdAndDoctorId(appointmentId, doctorId)).thenReturn(Optional.of(appointment));
         when(appointmentRepository.save(appointment)).thenReturn(appointment);
 
@@ -180,6 +189,23 @@ class AppointmentServiceTest {
         verify(slotSyncService, never()).enqueueReserve(any());
         verify(slotSyncService, never()).enqueueRelease(any(AppointmentEntity.class));
         verify(doctorSlotClient, never()).updateSlotStatus(any(), any());
+    }
+
+    @Test
+    void completeRejectsFutureAppointment() {
+        UUID doctorId = UUID.randomUUID();
+        UUID appointmentId = UUID.randomUUID();
+        AppointmentEntity appointment = appointment(doctorId, appointmentId, AppointmentStatus.CONFIRMED);
+        appointment.setScheduledStart(OffsetDateTime.now().plusHours(1));
+        appointment.setScheduledEnd(OffsetDateTime.now().plusHours(2));
+        when(appointmentRepository.findByIdAndDoctorId(appointmentId, doctorId)).thenReturn(Optional.of(appointment));
+
+        assertThatThrownBy(() -> service.complete(doctorId, appointmentId, "complete-key-1"))
+                .isInstanceOf(ApiException.class)
+                .extracting(exception -> ((ApiException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.CONFLICT);
+        verify(appointmentRepository, never()).save(any());
+        verify(eventPublisher, never()).publishStatusChanged(any(), any());
     }
 
     @Test
@@ -217,6 +243,17 @@ class AppointmentServiceTest {
         assertThat(response.reason()).isEqualTo("Need a later time");
         verify(slotSyncService).enqueueReserve(appointment);
         verify(slotSyncService).enqueueRelease(appointmentId, oldSlotId);
+        ArgumentCaptor<AppointmentChangeHistoryEntity> historyCaptor = forClass(AppointmentChangeHistoryEntity.class);
+        verify(changeHistoryRepository).save(historyCaptor.capture());
+        assertThat(historyCaptor.getValue().getAppointmentId()).isEqualTo(appointmentId);
+        assertThat(historyCaptor.getValue().getActorId()).isEqualTo(patientId);
+        assertThat(historyCaptor.getValue().getActorRole()).isEqualTo("PATIENT");
+        assertThat(historyCaptor.getValue().getChangeType()).isEqualTo("RESCHEDULE");
+        assertThat(historyCaptor.getValue().getOldSlotId()).isEqualTo(oldSlotId);
+        assertThat(historyCaptor.getValue().getNewSlotId()).isEqualTo(newSlotId);
+        assertThat(historyCaptor.getValue().getOldStatus()).isEqualTo("CONFIRMED");
+        assertThat(historyCaptor.getValue().getNewStatus()).isEqualTo("PENDING");
+        assertThat(historyCaptor.getValue().getReason()).isEqualTo("Need a later time");
         verify(eventPublisher).publishStatusChanged("APPOINTMENT_RESCHEDULED", appointment);
     }
 
