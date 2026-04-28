@@ -114,6 +114,16 @@ export function cancelDoctorAppointment(appointmentId, idempotencyKey, reason) {
   });
 }
 
+export function completeDoctorAppointment(appointmentId, idempotencyKey) {
+  return doctorApi(`/api/v1/doctors/appointments/${appointmentId}/complete`, {
+    method: 'PUT',
+    headers: {
+      'X-Idempotency-Key': idempotencyKey,
+    },
+    body: JSON.stringify({ reason: null }),
+  });
+}
+
 export function fetchAppointmentSoapNote(appointmentId) {
   return doctorApi(`/api/v1/doctors/appointments/${appointmentId}/soap`);
 }

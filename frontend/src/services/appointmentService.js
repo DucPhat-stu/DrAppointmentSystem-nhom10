@@ -31,3 +31,13 @@ export function cancelAppointment(appointmentId, reason, idempotencyKey = crypto
     body: JSON.stringify({ reason }),
   });
 }
+
+export function rescheduleAppointment(appointmentId, payload, idempotencyKey = crypto.randomUUID()) {
+  return appointmentApi(`/api/v1/appointments/${appointmentId}/reschedule`, {
+    method: 'PUT',
+    headers: {
+      'X-Idempotency-Key': idempotencyKey,
+    },
+    body: JSON.stringify(payload),
+  });
+}
