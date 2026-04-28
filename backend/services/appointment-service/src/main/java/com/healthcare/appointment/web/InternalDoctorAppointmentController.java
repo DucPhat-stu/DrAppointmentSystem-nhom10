@@ -108,4 +108,14 @@ public class InternalDoctorAppointmentController {
                 appointmentService.cancel(doctorId, appointmentId, idempotencyKey, body)
         );
     }
+
+    @PutMapping("/{appointmentId}/complete")
+    public ApiResponse<AppointmentResponse> complete(@PathVariable UUID doctorId,
+                                                     @PathVariable UUID appointmentId,
+                                                     @RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey) {
+        return apiResponseFactory.success(
+                "Appointment completed",
+                appointmentService.complete(doctorId, appointmentId, idempotencyKey)
+        );
+    }
 }

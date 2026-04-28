@@ -56,4 +56,18 @@ public class RabbitConfig {
                 .to(appointmentEventsExchange)
                 .with("APPOINTMENT_CANCELLED_BY_PATIENT");
     }
+
+    @Bean
+    Binding appointmentRescheduledBinding(Queue notificationAppointmentQueue, TopicExchange appointmentEventsExchange) {
+        return BindingBuilder.bind(notificationAppointmentQueue)
+                .to(appointmentEventsExchange)
+                .with("APPOINTMENT_RESCHEDULED");
+    }
+
+    @Bean
+    Binding appointmentCompletedBinding(Queue notificationAppointmentQueue, TopicExchange appointmentEventsExchange) {
+        return BindingBuilder.bind(notificationAppointmentQueue)
+                .to(appointmentEventsExchange)
+                .with("APPOINTMENT_COMPLETED");
+    }
 }

@@ -22,4 +22,6 @@ public interface AppointmentServiceClient {
     DoctorAppointmentResponse reject(UUID doctorId, UUID appointmentId, String idempotencyKey, AppointmentActionRequest request);
 
     DoctorAppointmentResponse cancel(UUID doctorId, UUID appointmentId, String idempotencyKey, AppointmentActionRequest request);
+
+    DoctorAppointmentResponse complete(UUID doctorId, UUID appointmentId, String idempotencyKey);
 }

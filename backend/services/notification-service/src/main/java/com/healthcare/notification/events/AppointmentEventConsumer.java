@@ -37,6 +37,12 @@ public class AppointmentEventConsumer {
                 notifyPatient(event, "Appointment cancelled", "Your appointment cancellation has been recorded.");
                 notifyDoctor(event, "Patient cancelled appointment", "A patient cancelled an appointment on your schedule.");
             }
+            case "APPOINTMENT_RESCHEDULED" -> {
+                notifyPatient(event, "Appointment rescheduled", "Your new appointment time is waiting for doctor confirmation.");
+                notifyDoctor(event, "Appointment rescheduled", "A patient requested a new appointment time.");
+            }
+            case "APPOINTMENT_COMPLETED" ->
+                    notifyPatient(event, "Appointment completed", "Your appointment has been marked as completed.");
             default -> {
                 // Unknown event types are intentionally ignored to keep consumers forward compatible.
             }

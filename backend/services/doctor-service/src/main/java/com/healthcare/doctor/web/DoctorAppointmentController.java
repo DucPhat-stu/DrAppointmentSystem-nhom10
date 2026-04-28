@@ -86,4 +86,13 @@ public class DoctorAppointmentController {
         AuthenticatedUser doctor = currentDoctorResolver.resolve(request);
         return apiResponseFactory.success("Appointment cancelled", appointmentService.cancel(doctor.userId(), id, idempotencyKey, body));
     }
+
+    @PutMapping("/{id}/complete")
+    public ApiResponse<DoctorAppointmentResponse> complete(
+            HttpServletRequest request,
+            @PathVariable UUID id,
+            @RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey) {
+        AuthenticatedUser doctor = currentDoctorResolver.resolve(request);
+        return apiResponseFactory.success("Appointment completed", appointmentService.complete(doctor.userId(), id, idempotencyKey));
+    }
 }

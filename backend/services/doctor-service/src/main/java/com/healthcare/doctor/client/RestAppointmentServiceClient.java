@@ -108,6 +108,11 @@ public class RestAppointmentServiceClient implements AppointmentServiceClient {
         return action(doctorId, appointmentId, "cancel", idempotencyKey, request);
     }
 
+    @Override
+    public DoctorAppointmentResponse complete(UUID doctorId, UUID appointmentId, String idempotencyKey) {
+        return action(doctorId, appointmentId, "complete", idempotencyKey, null);
+    }
+
     private DoctorAppointmentResponse action(UUID doctorId,
                                              UUID appointmentId,
                                              String action,

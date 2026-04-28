@@ -5,6 +5,7 @@ import com.healthcare.appointment.domain.AppointmentStatus;
 import com.healthcare.appointment.dto.AppointmentActionRequest;
 import com.healthcare.appointment.dto.CreateAppointmentRequest;
 import com.healthcare.appointment.dto.DoctorSlotResponse;
+import com.healthcare.appointment.dto.RescheduleAppointmentRequest;
 import com.healthcare.appointment.entity.AppointmentEntity;
 import com.healthcare.appointment.events.AppointmentEventPublisher;
 import com.healthcare.appointment.repository.AppointmentActionIdempotencyJpaRepository;
@@ -159,6 +160,59 @@ class AppointmentServiceTest {
         assertThat(response.cancellationReason()).isEqualTo("No longer needed");
         verify(doctorSlotClient).updateSlotStatus(appointment.getSlotId(), "AVAILABLE");
         verify(eventPublisher).publishStatusChanged("APPOINTMENT_CANCELLED_BY_PATIENT", appointment);
+    }
+
+    @Test
+    void completeRequiresConfirmedAppointment() {
+        UUID doctorId = UUID.randomUUID();
+        UUID appointmentId = UUID.randomUUID();
+        AppointmentEntity appointment = appointment(doctorId, appointmentId, AppointmentStatus.CONFIRMED);
+        when(appointmentRepository.findByIdAndDoctorId(appointmentId, doctorId)).thenReturn(Optional.of(appointment));
+        when(appointmentRepository.save(appointment)).thenReturn(appointment);
+
+        var response = service.complete(doctorId, appointmentId, "complete-key-1");
+
+        assertThat(response.status()).isEqualTo(AppointmentStatus.COMPLETED);
+        verify(eventPublisher).publishStatusChanged("APPOINTMENT_COMPLETED", appointment);
+        verify(doctorSlotClient, never()).updateSlotStatus(any(), any());
+    }
+
+    @Test
+    void patientRescheduleMovesAppointmentToNewSlotAndPendingReview() {
+        UUID patientId = UUID.randomUUID();
+        UUID doctorId = UUID.randomUUID();
+        UUID appointmentId = UUID.randomUUID();
+        UUID oldSlotId = UUID.randomUUID();
+        UUID newSlotId = UUID.randomUUID();
+        AppointmentEntity appointment = appointment(doctorId, appointmentId, AppointmentStatus.CONFIRMED);
+        appointment.setPatientId(patientId);
+        appointment.setSlotId(oldSlotId);
+        when(appointmentRepository.findByIdAndPatientId(appointmentId, patientId)).thenReturn(Optional.of(appointment));
+        when(doctorSlotClient.getSlot(newSlotId)).thenReturn(new DoctorSlotResponse(
+                newSlotId,
+                doctorId,
+                UUID.randomUUID(),
+                OffsetDateTime.parse("2026-06-26T10:00:00Z"),
+                OffsetDateTime.parse("2026-06-26T11:00:00Z"),
+                "AVAILABLE"
+        ));
+        when(appointmentRepository.existsBySlotIdAndStatusIn(newSlotId, List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED)))
+                .thenReturn(false);
+        when(appointmentRepository.save(appointment)).thenReturn(appointment);
+
+        var response = service.reschedulePatientAppointment(
+                patientId,
+                appointmentId,
+                "reschedule-key-1",
+                new RescheduleAppointmentRequest(newSlotId, "Need a later time")
+        );
+
+        assertThat(response.slotId()).isEqualTo(newSlotId);
+        assertThat(response.status()).isEqualTo(AppointmentStatus.PENDING);
+        assertThat(response.reason()).isEqualTo("Need a later time");
+        verify(doctorSlotClient).updateSlotStatus(newSlotId, "BOOKED");
+        verify(doctorSlotClient).updateSlotStatus(oldSlotId, "AVAILABLE");
+        verify(eventPublisher).publishStatusChanged("APPOINTMENT_RESCHEDULED", appointment);
     }
 
     private AppointmentEntity appointment(UUID doctorId, UUID appointmentId, AppointmentStatus status) {

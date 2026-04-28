@@ -8,6 +8,7 @@ import com.healthcare.appointment.dto.AppointmentPageResponse;
 import com.healthcare.appointment.dto.AppointmentResponse;
 import com.healthcare.appointment.dto.CreateAppointmentRequest;
 import com.healthcare.appointment.dto.DoctorSlotResponse;
+import com.healthcare.appointment.dto.RescheduleAppointmentRequest;
 import com.healthcare.appointment.entity.AppointmentActionIdempotencyEntity;
 import com.healthcare.appointment.entity.AppointmentEntity;
 import com.healthcare.appointment.events.AppointmentEventPublisher;
@@ -186,6 +187,11 @@ public class AppointmentService {
     }
 
     @Transactional
+    public AppointmentResponse complete(UUID doctorId, UUID appointmentId, String idempotencyKey) {
+        return transition(doctorId, appointmentId, "COMPLETE", idempotencyKey, AppointmentStatus.COMPLETED, "APPOINTMENT_COMPLETED", null);
+    }
+
+    @Transactional
     public AppointmentResponse cancelPatientAppointment(UUID patientId,
                                                         UUID appointmentId,
                                                         String idempotencyKey,
@@ -216,6 +222,59 @@ public class AppointmentService {
         syncSlotStatus(saved, AppointmentStatus.CANCELLED);
         recordIdempotency(saved, "PATIENT_CANCEL", idempotencyKey, AppointmentStatus.CANCELLED);
         eventPublisher.publishStatusChanged("APPOINTMENT_CANCELLED_BY_PATIENT", saved);
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public AppointmentResponse reschedulePatientAppointment(UUID patientId,
+                                                            UUID appointmentId,
+                                                            String idempotencyKey,
+                                                            RescheduleAppointmentRequest request) {
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            var existing = idempotencyRepository.findByAppointmentIdAndActionNameAndIdempotencyKey(
+                    appointmentId,
+                    "PATIENT_RESCHEDULE",
+                    idempotencyKey
+            );
+            if (existing.isPresent()) {
+                return getPatientAppointment(patientId, appointmentId);
+            }
+        }
+
+        AppointmentEntity appointment = appointmentRepository.findByIdAndPatientId(appointmentId, patientId)
+                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, "Appointment not found"));
+        validatePatientReschedule(appointment);
+        if (request.slotId().equals(appointment.getSlotId())) {
+            recordIdempotency(appointment, "PATIENT_RESCHEDULE", idempotencyKey, appointment.getStatus());
+            return toResponse(appointment);
+        }
+
+        DoctorSlotResponse newSlot = doctorSlotClient.getSlot(request.slotId());
+        if (!appointment.getDoctorId().equals(newSlot.doctorId())) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "New slot must belong to the same doctor");
+        }
+        if (!"AVAILABLE".equals(newSlot.status())) {
+            throw new ApiException(ErrorCode.CONFLICT, "Selected slot is no longer available");
+        }
+        if (appointmentRepository.existsBySlotIdAndStatusIn(request.slotId(), ACTIVE_SLOT_STATUSES)) {
+            throw new ApiException(ErrorCode.CONFLICT, "Selected slot is already booked");
+        }
+
+        UUID oldSlotId = appointment.getSlotId();
+        appointment.setSlotId(newSlot.id());
+        appointment.setScheduledStart(newSlot.startTime());
+        appointment.setScheduledEnd(newSlot.endTime());
+        appointment.setStatus(AppointmentStatus.PENDING);
+        appointment.setReason(normalizeReason(request.reason()));
+        appointment.setCancellationReason(null);
+
+        AppointmentEntity saved = appointmentRepository.save(appointment);
+        doctorSlotClient.updateSlotStatus(saved.getSlotId(), "BOOKED");
+        if (oldSlotId != null) {
+            doctorSlotClient.updateSlotStatus(oldSlotId, "AVAILABLE");
+        }
+        recordIdempotency(saved, "PATIENT_RESCHEDULE", idempotencyKey, AppointmentStatus.PENDING);
+        eventPublisher.publishStatusChanged("APPOINTMENT_RESCHEDULED", saved);
         return toResponse(saved);
     }
 
@@ -272,10 +331,17 @@ public class AppointmentService {
             case CONFIRMED -> currentStatus == AppointmentStatus.PENDING;
             case REJECTED -> currentStatus == AppointmentStatus.PENDING;
             case CANCELLED -> currentStatus == AppointmentStatus.CONFIRMED || currentStatus == AppointmentStatus.PENDING;
+            case COMPLETED -> currentStatus == AppointmentStatus.CONFIRMED;
             default -> false;
         };
         if (!valid) {
             throw new ApiException(ErrorCode.CONFLICT, "Invalid appointment state transition");
+        }
+    }
+
+    private void validatePatientReschedule(AppointmentEntity appointment) {
+        if (appointment.getStatus() != AppointmentStatus.PENDING && appointment.getStatus() != AppointmentStatus.CONFIRMED) {
+            throw new ApiException(ErrorCode.CONFLICT, "Only pending or confirmed appointments can be rescheduled");
         }
     }
 

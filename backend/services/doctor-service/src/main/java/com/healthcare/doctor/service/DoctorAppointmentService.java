@@ -41,4 +41,8 @@ public class DoctorAppointmentService {
     public DoctorAppointmentResponse cancel(UUID doctorId, UUID appointmentId, String idempotencyKey, AppointmentActionRequest request) {
         return appointmentServiceClient.cancel(doctorId, appointmentId, idempotencyKey, request);
     }
+
+    public DoctorAppointmentResponse complete(UUID doctorId, UUID appointmentId, String idempotencyKey) {
+        return appointmentServiceClient.complete(doctorId, appointmentId, idempotencyKey);
+    }
 }

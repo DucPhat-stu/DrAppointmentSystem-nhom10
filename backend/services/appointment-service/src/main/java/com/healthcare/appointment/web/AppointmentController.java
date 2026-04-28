@@ -4,6 +4,7 @@ import com.healthcare.appointment.dto.AppointmentResponse;
 import com.healthcare.appointment.dto.AppointmentActionRequest;
 import com.healthcare.appointment.dto.AppointmentPageResponse;
 import com.healthcare.appointment.dto.CreateAppointmentRequest;
+import com.healthcare.appointment.dto.RescheduleAppointmentRequest;
 import com.healthcare.appointment.security.CurrentPatientResolver;
 import com.healthcare.appointment.service.AppointmentService;
 import com.healthcare.shared.api.ApiResponse;
@@ -83,5 +84,17 @@ public class AppointmentController {
                                                              @RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey,
                                                              @Valid @RequestBody(required = false) AppointmentActionRequest body) {
         return cancel(request, id, idempotencyKey, body);
+    }
+
+    @PutMapping("/{id}/reschedule")
+    public ApiResponse<AppointmentResponse> reschedule(HttpServletRequest request,
+                                                       @PathVariable UUID id,
+                                                       @RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey,
+                                                       @Valid @RequestBody RescheduleAppointmentRequest body) {
+        AuthenticatedUser patient = currentPatientResolver.resolve(request);
+        return apiResponseFactory.success(
+                "Appointment rescheduled",
+                appointmentService.reschedulePatientAppointment(patient.userId(), id, idempotencyKey, body)
+        );
     }
 }
