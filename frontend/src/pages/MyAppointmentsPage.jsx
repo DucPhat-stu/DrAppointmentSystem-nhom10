@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchAppointments } from '../services/appointmentService.js';
+import { fetchDoctorDetail } from '../services/doctorService.js';
 import styles from './Phase3Pages.module.css';
 
 const STATUSES = ['', 'PENDING', 'CONFIRMED', 'CANCELLED', 'REJECTED', 'COMPLETED'];
@@ -17,20 +18,53 @@ function statusClass(status) {
   return styles[(status ?? '').toLowerCase()] ?? '';
 }
 
+function doctorLabel(doctorId, doctorMap) {
+  const info = doctorMap.get(doctorId);
+  if (info) {
+    const parts = [`Dr. ${info.name}`];
+    if (info.specialty) parts.push(info.specialty);
+    return parts.join(' — ');
+  }
+  return `Doctor ${(doctorId ?? '').slice(0, 8)}…`;
+}
+
 export default function MyAppointmentsPage() {
   const [status, setStatus] = useState('');
   const [appointments, setAppointments] = useState([]);
   const [pageInfo, setPageInfo] = useState({ totalElements: 0 });
+  const [doctorMap, setDoctorMap] = useState(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const enrichDoctors = useCallback(async (appointmentList) => {
+    const ids = [...new Set(appointmentList.map((a) => a.doctorId).filter(Boolean))];
+    const unknownIds = ids.filter((id) => !doctorMap.has(id));
+    if (unknownIds.length === 0) return;
+
+    const results = await Promise.allSettled(
+      unknownIds.map((id) => fetchDoctorDetail(id).then((res) => ({ id, data: res.data })))
+    );
+    setDoctorMap((prev) => {
+      const next = new Map(prev);
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          const { id, data } = result.value;
+          next.set(id, { name: data.name ?? data.fullName ?? id.slice(0, 8), specialty: data.specialty ?? '' });
+        }
+      }
+      return next;
+    });
+  }, [doctorMap]);
 
   const loadAppointments = useCallback(async (nextStatus = status) => {
     setLoading(true);
     setError('');
     try {
       const response = await fetchAppointments({ status: nextStatus || undefined, size: 50 });
-      setAppointments(response.data?.content ?? []);
+      const list = response.data?.content ?? [];
+      setAppointments(list);
       setPageInfo(response.data ?? { totalElements: 0 });
+      enrichDoctors(list);
     } catch (err) {
       setError(err.message ?? 'Unable to load appointments');
       setAppointments([]);
@@ -38,7 +72,7 @@ export default function MyAppointmentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [status]);
+  }, [status, enrichDoctors]);
 
   useEffect(() => {
     loadAppointments();
@@ -100,7 +134,7 @@ export default function MyAppointmentsPage() {
                 <div className={styles.itemTop}>
                   <div className={styles.itemTitle}>
                     <strong>{formatDateTime(appointment.scheduledStart)}</strong>
-                    <span className={styles.meta}>Doctor {appointment.doctorId}</span>
+                    <span className={styles.meta}>{doctorLabel(appointment.doctorId, doctorMap)}</span>
                   </div>
                   <span className={`${styles.badge} ${statusClass(appointment.status)}`}>{appointment.status}</span>
                 </div>

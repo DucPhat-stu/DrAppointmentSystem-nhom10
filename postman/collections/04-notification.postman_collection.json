@@ -1,0 +1,128 @@
+{
+  "info": {
+    "_postman_id": "e3f4a5b6-c7d8-4e9f-0a1b-2c3d4e5f6a7b",
+    "name": "04-notification",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Notification service: list notifications, mark read, mark all read."
+  },
+  "item": [
+    {
+      "name": "List Notifications",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessTokenPatient}}" }
+        ],
+        "url": "{{baseUrlNotification}}/api/v1/notifications?page=0&size=20"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Notifications list success', function () { pm.expect(body.success).to.eql(true); });",
+              "if (body.data && body.data.content && body.data.content.length > 0) {",
+              "  pm.environment.set('notificationId', body.data.content[0].id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Unread Count",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessTokenPatient}}" }
+        ],
+        "url": "{{baseUrlNotification}}/api/v1/notifications/unread-count"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Unread count returned', function () { pm.expect(body.success).to.eql(true); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mark Notification Read",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessTokenPatient}}" }
+        ],
+        "url": "{{baseUrlNotification}}/api/v1/notifications/{{notificationId}}/read"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Mark read success', function () { pm.expect(body.success).to.eql(true); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mark All Notifications Read",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessTokenPatient}}" }
+        ],
+        "url": "{{baseUrlNotification}}/api/v1/notifications/read-all"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Mark all read success', function () { pm.expect(body.success).to.eql(true); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Doctor — List Notifications",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessTokenDoctor}}" }
+        ],
+        "url": "{{baseUrlNotification}}/api/v1/notifications?page=0&size=20"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Doctor notifications list success', function () { pm.expect(body.success).to.eql(true); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

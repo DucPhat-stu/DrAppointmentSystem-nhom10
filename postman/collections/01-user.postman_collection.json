@@ -1,0 +1,114 @@
+{
+  "info": {
+    "_postman_id": "c1b2d3e4-f5a6-4b7c-8d9e-0f1a2b3c4d5e",
+    "name": "01-user",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "User service: profile CRUD and medical records."
+  },
+  "item": [
+    {
+      "name": "Get My Profile",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessTokenPatient}}" }
+        ],
+        "url": "{{baseUrlAuth}}/api/v1/users/me"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile has email', function () { pm.expect(body.data.email).to.be.a('string'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update My Profile",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessTokenPatient}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Patient Updated\",\n  \"phone\": \"0901999999\",\n  \"dateOfBirth\": \"1995-06-15\",\n  \"gender\": \"MALE\",\n  \"address\": \"123 Main St\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrlAuth}}/api/v1/users/me"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Update returns updated name', function () { pm.expect(body.data.name).to.eql('Patient Updated'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get My Medical Records",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessTokenPatient}}" }
+        ],
+        "url": "{{baseUrlAuth}}/api/v1/users/me/medical-records"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Records is array', function () { pm.expect(body.data).to.be.an('array'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Medical Record",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessTokenPatient}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"recordType\": \"ALLERGY\",\n  \"description\": \"Penicillin allergy\",\n  \"notes\": \"Causes rash\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrlAuth}}/api/v1/users/me/medical-records"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200 or 201', function () { pm.expect([200, 201]).to.include(pm.response.code); });",
+              "const body = pm.response.json();",
+              "pm.test('Record created', function () { pm.expect(body.success).to.eql(true); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-﻿# 🏥 Healthcare Platform MVP — Senior Dev Review (Cập nhật 2026-04-29)
+# 🏥 Healthcare Platform MVP — Senior Dev Review (Cập nhật 2026-04-29)
 
 > **Reviewer role**: Senior Engineer — đọc toàn bộ source code thực tế, đối chiếu với BA.md / IDEA.md / SOLID_GUIDELINES.md / commit history.
 
@@ -63,7 +63,7 @@ Phase 4  – Hardening                        🟡 partial
 | Bệnh nhân xem danh sách lịch hẹn | ✅ | GET /api/v1/appointments (list) |
 | Bệnh nhân hủy lịch | ✅ | PUT/DELETE /api/v1/appointments/{id}/cancel |
 | Bệnh nhân đổi lịch | ✅ | PUT /api/v1/appointments/{id}/reschedule |
-| Bác sĩ mark COMPLETED | ❌ THIẾU | Chưa có endpoint; service logic đã có guard |
+| Bác sĩ mark COMPLETED | ✅ | InternalDoctorAppointmentController PUT /{id}/complete + service guard |
 
 ### 2.5 Notification (BA §9.5)
 | Yêu cầu | Trạng thái | Ghi chú |
@@ -104,14 +104,14 @@ Phase 4  – Hardening                        🟡 partial
 
 ## 4. Backend — Vấn đề cần chú ý ⚠️
 
-| # | Vấn đề | Mức | Vị trí | Đề xuất |
+| # | Vấn đề | Mức | Vị trí | Trạng thái |
 |---|---|---|---|---|
-| B1 | Thiếu endpoint mark COMPLETED | 🔴 Critical | AppointmentController không có PATCH COMPLETED | Thêm endpoint; service đã có guard scheduledEnd.isAfter(now) |
-| B2 | Verify outbox payload có eventId field | 🟡 Medium | AppointmentEventOutboxEntity.payload | Nếu thiếu eventId thì notification dedup fallback về (appointmentId, eventName) — vẫn hoạt động nhưng kém robust |
-| B3 | Redis cache available slots chưa có | 🟠 Low | AvailableSlotCache interface tồn tại, chưa có impl | TTL 5 phút giảm tải doctor-service khi nhiều patient xem slot đồng thời |
-| B4 | MedicalRecord nằm trong user-service | 🟠 Low | MedicalRecordEntity — coupling với user domain | Chấp nhận MVP; tách medical-record-service ở phase sau |
-| B5 | Thiếu API Gateway | 🟠 Low | Mỗi service tự verify JWT | OK cho MVP local; Nginx reverse proxy là bước tiếp theo |
-| B6 | Postman collections thiếu | 🟠 Low | Chỉ có auth collection | Thêm user/doctor/appointment/notification |
+| B1 | Thiếu endpoint mark COMPLETED | 🔴 Critical | InternalDoctorAppointmentController | ✅ ĐÃ CÓ — PUT /{appointmentId}/complete + service guard scheduledEnd |
+| B2 | Verify outbox payload có eventId field | 🟡 Medium | AppointmentEventOutboxEntity.payload | ✅ ĐÃ CÓ — payload chứa eventId (entity.id) |
+| B3 | Redis cache available slots chưa có | 🟠 Low | AvailableSlotCache interface tồn tại, chưa có impl | Defer — TTL 5 phút, phase sau |
+| B4 | MedicalRecord nằm trong user-service | 🟠 Low | MedicalRecordEntity — coupling với user domain | Defer — chấp nhận MVP |
+| B5 | Thiếu API Gateway | 🟠 Low | Mỗi service tự verify JWT | Defer — OK cho MVP local |
+| B6 | Postman collections thiếu | 🟠 Low | Chỉ có auth + appointment | ✅ ĐÃ THÊM — 01-user, 02-doctor, 04-notification |
 
 ---
 
@@ -137,10 +137,10 @@ Phase 4  – Hardening                        🟡 partial
 |---|---|---|---|
 | F1 | Mock auth fallback trong DEV | 🟡 Medium | ✅ Đúng thiết kế — import.meta.env.DEV guard |
 | F2 | sessionStorage vs localStorage | 🟡 Medium | Chấp nhận MVP — sessionStorage an toàn hơn |
-| F3 | console.error trong ProfilePage loadRecords | 🟠 Low | ĐÃ FIX — xóa, silent fail |
-| F4 | LoginPage.jsx (root) là Phase 0 skeleton | 🟡 Medium | ĐÃ FIX — re-export sang LoginPage/LoginPage.jsx |
-| F5 | useEffect dependency stale trong BookAppointmentPage | 🟠 Low | Không gây bug runtime; cần useCallback để ESLint sạch |
-| F6 | MyAppointmentsPage hiển thị doctorId thô | 🟠 Low | Doctor UUID hiện trực tiếp; cần enrich từ doctor-service |
+| F3 | console.error trong ProfilePage loadRecords | 🟠 Low | ✅ ĐÃ FIX — xóa, silent fail |
+| F4 | LoginPage.jsx (root) là Phase 0 skeleton | 🟡 Medium | ✅ ĐÃ FIX — re-export sang LoginPage/LoginPage.jsx |
+| F5 | useEffect dependency stale trong BookAppointmentPage | 🟠 Low | ✅ ĐÃ FIX — useCallback + useRef cho doctorName/specialty |
+| F6 | MyAppointmentsPage hiển thị doctorId thô | 🟠 Low | ✅ ĐÃ FIX — enrich doctor info từ doctor-service (Dr. Name — Specialty) |
 
 ---
 
@@ -180,24 +180,24 @@ Khuyến nghị: nêu nhận thức này trong báo cáo như "technical debt đ
 | Task 1 — Auth + Profile | ✅ 100% | 24/24 items |
 | FE Task 1 — Auth + Home | ✅ ~95% | Social login UI only (đúng scope MVP) |
 | FE Task 1a — Profile | ✅ 100% | 9/9 stories |
-| Task 2 — Doctor + Appointment | ✅ 95% | Còn thiếu: mark COMPLETED endpoint |
-| Phase 3 — Notification + FE | ✅ 90% | notification-service complete; 4 phase-3 FE pages complete |
+| Task 2 — Doctor + Appointment | ✅ 100% | mark COMPLETED endpoint đã có (InternalDoctorAppointmentController) |
+| Phase 3 — Notification + FE | ✅ 95% | notification-service complete; 4 phase-3 FE pages complete; F5/F6 fixed |
 
-**Overall MVP completion: ~90-92%**
+**Overall MVP completion: ~96-98%**
 
 ---
 
-## 10. Gap còn lại (Thực tế, sau loại bỏ items đã xong)
+## 10. Gap còn lại (Cập nhật 29/04/2026)
 
-| # | Hạng mục | Priority | Effort |
-|---|---|---|---|
-| R1 | Mark appointment COMPLETED (BE endpoint) | 🔴 P0 | 30 phút |
-| R2 | Verify outbox payload JSON có eventId field | 🟡 P1 | 15 phút |
-| R3 | useCallback cho loadSlots trong BookAppointmentPage | 🟠 P2 | 30 phút |
-| R4 | Redis cache available slots | 🟠 P2 | 2h |
-| R5 | Postman collections: user/doctor/appointment/notification | 🟡 P1 | 2h |
-| R6 | Integration test booking flow end-to-end | 🟡 P1 | 3h |
-| R7 | ISP refactor: tách FoundationController khỏi shared/common | 🟠 P2 | 2h |
+| # | Hạng mục | Priority | Effort | Trạng thái |
+|---|---|---|---|---|
+| R1 | Mark appointment COMPLETED (BE endpoint) | 🔴 P0 | — | ✅ Đã có sẵn |
+| R2 | Verify outbox payload JSON có eventId field | 🟡 P1 | — | ✅ Đã có sẵn |
+| R3 | useCallback cho loadSlots trong BookAppointmentPage | 🟠 P2 | 30 phút | ✅ ĐÃ FIX |
+| R4 | Redis cache available slots | 🟠 P2 | 2h | Defer |
+| R5 | Postman collections: user/doctor/notification | 🟡 P1 | 2h | ✅ ĐÃ THÊM |
+| R6 | Integration test booking flow end-to-end | 🟡 P1 | 3h | Backlog |
+| R7 | ISP refactor: tách FoundationController khỏi shared/common | 🟠 P2 | 2h | Backlog |
 
 ---
 
@@ -228,8 +228,13 @@ Khuyến nghị: nêu nhận thức này trong báo cáo như "technical debt đ
 |---|---|
 | frontend/src/pages/ProfilePage.jsx | Xóa console.error('Failed to load records') → silent fail |
 | frontend/src/pages/LoginPage.jsx | Thay Phase 0 mock skeleton → re-export từ LoginPage/LoginPage.jsx |
+| frontend/src/pages/BookAppointmentPage.jsx | F5: useCallback + useRef cho loadSlots — ESLint sạch |
+| frontend/src/pages/MyAppointmentsPage.jsx | F6: Enrich doctor info (Dr. Name — Specialty) thay UUID thô |
 | backend/doctor-service/.../V7__seed_schedules_and_slots.sql | MỚI — 5 ngày + 20 slots |
 | backend/appointment-service/.../V8__seed_appointments.sql | MỚI — 2 appointment mẫu |
+| postman/collections/01-user.postman_collection.json | MỚI — profile CRUD + medical records |
+| postman/collections/02-doctor.postman_collection.json | MỚI — doctors, slots, schedules, appointment actions |
+| postman/collections/04-notification.postman_collection.json | MỚI — notifications list, read, read-all |
 
 ---
 
@@ -250,4 +255,4 @@ Khuyến nghị: nêu nhận thức này trong báo cáo như "technical debt đ
 | Unit tests | 10 test files |
 | DB Migrations | 23+ SQL files (4 services) |
 | Seed data | auth V3 · user V4 · doctor V7 · appointment V8 |
-| Overall MVP completion | ~90-92% |
+| Overall MVP completion | ~96-98% |

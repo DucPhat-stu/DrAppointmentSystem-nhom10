@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { createAppointment } from '../services/appointmentService.js';
 import { fetchAvailableSlots } from '../services/doctorService.js';
@@ -37,7 +37,12 @@ export default function BookAppointmentPage() {
 
   const canLoad = useMemo(() => looksLikeUuid(doctorId) && !!date, [doctorId, date]);
 
-  async function loadSlots(nextDoctorId = doctorId, nextDate = date) {
+  const doctorNameRef = useRef(doctorName);
+  const specialtyRef = useRef(specialty);
+  doctorNameRef.current = doctorName;
+  specialtyRef.current = specialty;
+
+  const loadSlots = useCallback(async (nextDoctorId = doctorId, nextDate = date) => {
     if (!looksLikeUuid(nextDoctorId)) {
       setError('Enter a valid doctor ID.');
       setSlots([]);
@@ -54,8 +59,8 @@ export default function BookAppointmentPage() {
       const response = await fetchAvailableSlots(nextDoctorId, nextDate);
       setSlots(response.data ?? []);
       const nextParams = { doctorId: nextDoctorId, date: nextDate };
-      if (doctorName) nextParams.doctorName = doctorName;
-      if (specialty) nextParams.specialty = specialty;
+      if (doctorNameRef.current) nextParams.doctorName = doctorNameRef.current;
+      if (specialtyRef.current) nextParams.specialty = specialtyRef.current;
       setSearchParams(nextParams);
     } catch (err) {
       setError(err.message ?? 'Unable to load available slots');
@@ -63,7 +68,7 @@ export default function BookAppointmentPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [doctorId, date, setSearchParams]);
 
   useEffect(() => {
     const initialDoctorId = searchParams.get('doctorId');
@@ -72,6 +77,7 @@ export default function BookAppointmentPage() {
     if (initialDoctorId && looksLikeUuid(initialDoctorId)) {
       loadSlots(initialDoctorId, searchParams.get('date') ?? date);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function applyFilters(event) {
