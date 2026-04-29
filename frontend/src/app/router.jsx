@@ -16,6 +16,7 @@ import DoctorSchedulePage from '../pages/DoctorSchedulePage.jsx';
 import DoctorAppointmentDashboardPage from '../pages/DoctorAppointmentDashboardPage.jsx';
 import DoctorLeavePage from '../pages/DoctorLeavePage.jsx';
 import AdminLeavePage from '../pages/AdminLeavePage.jsx';
+import AdminPromptPage from '../pages/AdminPromptPage.jsx';
 import RouteFallbackPage from '../pages/RouteFallbackPage.jsx';
 
 function ProtectedLayout() {
@@ -128,6 +129,14 @@ export const router = createBrowserRouter([
         element: (
           <RoleGate allowedRoles={['ADMIN']}>
             <AdminLeavePage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: '/admin/prompts',
+        element: (
+          <RoleGate allowedRoles={['ADMIN']}>
+            <AdminPromptPage />
           </RoleGate>
         ),
       },

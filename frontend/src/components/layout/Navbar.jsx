@@ -9,7 +9,7 @@ const publicLinks = [
   { to: '#contact', label: 'Contact' },
 ];
 
-const authLinks = [
+const baseAuthLinks = [
   { to: '/doctors', label: 'Doctors' },
   { to: '/appointments/book', label: 'Book Now' },
   { to: '/chat', label: 'AI Chat' },
@@ -38,7 +38,14 @@ export default function Navbar() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const navLinks = isAuthenticated ? authLinks : publicLinks;
+  const navLinks = isAuthenticated
+    ? [
+        ...baseAuthLinks,
+        ...(session?.role?.replace(/^ROLE_/, '').toUpperCase() === 'ADMIN'
+          ? [{ to: '/admin/prompts', label: 'Prompts' }]
+          : []),
+      ]
+    : publicLinks;
 
   const handleAnchorClick = (e, to) => {
     if (to.startsWith('#')) {
