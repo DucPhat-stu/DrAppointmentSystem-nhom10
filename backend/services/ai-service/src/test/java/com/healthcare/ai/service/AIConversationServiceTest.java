@@ -11,7 +11,7 @@ class AIConversationServiceTest {
     @Test
     void checkSymptomsReturnsFormattedText() {
         AIConversationService service = new AIConversationService(
-                new AIPromptBuilder(),
+                new AIPromptBuilder(new AIInputSanitizer()),
                 new AIClient(new GeminiProperties(), new AIClientProperties(), new ObjectMapper()),
                 new AIResponseParser(new ObjectMapper()),
                 new AITextFormatter()
