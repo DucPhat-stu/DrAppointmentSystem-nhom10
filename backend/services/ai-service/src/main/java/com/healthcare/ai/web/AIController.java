@@ -37,4 +37,12 @@ public class AIController {
                 conversationService.checkStructuredSymptoms(request)
         );
     }
+
+    @PostMapping("/preview/structured")
+    public ApiResponse<String> previewStructuredPrompt(@Valid @RequestBody StructuredAICheckRequest request) {
+        return apiResponseFactory.success(
+                "AI structured prompt preview completed",
+                conversationService.previewStructuredPrompt(request)
+        );
+    }
 }

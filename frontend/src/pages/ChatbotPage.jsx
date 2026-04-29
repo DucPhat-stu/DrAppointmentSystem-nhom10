@@ -28,6 +28,7 @@ export default function ChatbotPage() {
   const [symptoms, setSymptoms] = useState('');
   const [duration, setDuration] = useState('');
   const [description, setDescription] = useState('');
+  const [promptPreview, setPromptPreview] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [timeoutWarning, setTimeoutWarning] = useState(false);
@@ -162,6 +163,25 @@ export default function ChatbotPage() {
     }
   };
 
+  const handlePreviewPrompt = async () => {
+    if (!symptoms.trim() || !duration) {
+      setError('Vui long nhap trieu chung va thoi gian truoc khi xem preview.');
+      return;
+    }
+
+    try {
+      setError(null);
+      const preview = await chatService.previewStructuredPrompt({
+        symptoms: symptoms.trim(),
+        duration,
+        description: description.trim(),
+      });
+      setPromptPreview(preview);
+    } catch (requestError) {
+      setError(errorMessage(requestError));
+    }
+  };
+
   return (
     <main className={styles.page}>
       <section className={styles.header}>
@@ -209,6 +229,9 @@ export default function ChatbotPage() {
               </button>
             )}
           </div>
+        )}
+        {promptPreview && mode === 'structured' && (
+          <pre className={styles.previewBox}>{promptPreview}</pre>
         )}
 
         <form className={styles.inputBar} onSubmit={handleSubmit}>
@@ -278,6 +301,14 @@ export default function ChatbotPage() {
                     disabled={loading}
                   />
                 </label>
+                <button
+                  className={styles.previewButton}
+                  type="button"
+                  onClick={handlePreviewPrompt}
+                  disabled={loading || !symptoms.trim() || !duration}
+                >
+                  Preview prompt
+                </button>
               </div>
             )}
           </div>

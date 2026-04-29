@@ -88,7 +88,8 @@
 }
 
 .errorBox,
-.warningBox {
+.warningBox,
+.previewBox {
   margin: 0 18px 14px;
   padding: 12px 14px;
   border: 1px solid rgba(239, 68, 68, 0.32);
@@ -101,6 +102,15 @@
   border-color: rgba(245, 158, 11, 0.34);
   background: rgba(245, 158, 11, 0.08);
   color: #fcd34d;
+}
+
+.previewBox {
+  max-height: 220px;
+  overflow: auto;
+  border-color: rgba(59, 130, 246, 0.28);
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--color-text-secondary);
+  white-space: pre-wrap;
 }
 
 .errorBox {
@@ -217,6 +227,17 @@
 
 .structuredGrid .fullField {
   grid-column: 1 / -1;
+}
+
+.previewButton {
+  width: fit-content;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
 }
 
 .structuredGrid textarea {

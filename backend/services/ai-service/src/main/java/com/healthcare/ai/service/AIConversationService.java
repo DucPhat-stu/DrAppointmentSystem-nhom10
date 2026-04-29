@@ -31,4 +31,8 @@ public class AIConversationService {
         String rawResponse = aiClient.generate(prompt);
         return formatter.format(parser.parse(rawResponse));
     }
+
+    public String previewStructuredPrompt(StructuredAICheckRequest request) {
+        return promptBuilder.buildStructuredPrompt(request);
+    }
 }

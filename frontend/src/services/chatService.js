@@ -18,4 +18,13 @@ export const chatService = {
 
     return response.data;
   },
+
+  async previewStructuredPrompt(payload) {
+    const response = await aiApi('/api/v1/ai/preview/structured', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    return response.data;
+  },
 };
