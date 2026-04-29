@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
+import { ApiError } from '../services/httpClient.js';
 import { chatService } from '../services/chatService.js';
 import styles from './ChatbotPage.module.css';
+
+const COOLDOWN_MS = 2000;
 
 function createMessage(role, text) {
   return {
@@ -17,32 +20,83 @@ export default function ChatbotPage() {
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [timeoutWarning, setTimeoutWarning] = useState(false);
+  const [lastRequestAt, setLastRequestAt] = useState(0);
+  const [retryText, setRetryText] = useState(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages, loading]);
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    const text = inputText.trim();
-    if (!text) {
-      setError('Vui long nhap trieu chung cua ban.');
+  const errorMessage = (requestError) => {
+    if (requestError instanceof ApiError) {
+      if (requestError.status === 400) {
+        return 'Vui long nhap trieu chung tu 5 den 500 ky tu.';
+      }
+      if (requestError.status === 500) {
+        return 'Loi server, vui long lien he ho tro.';
+      }
+      if (requestError.status === 503) {
+        return 'AI dang tam thoi qua tai, vui long thu lai sau.';
+      }
+    }
+
+    if (requestError?.name === 'TypeError') {
+      return 'Kiem tra ket noi internet hoac trang thai ai-service.';
+    }
+
+    return requestError?.message || 'Co loi xay ra, vui long thu lai.';
+  };
+
+  const sendMessage = async (text, options = {}) => {
+    const normalized = text.trim();
+    if (normalized.length < 5) {
+      setError('Vui long nhap trieu chung toi thieu 5 ky tu.');
       return;
     }
 
-    setMessages((current) => [...current, createMessage('user', text)]);
-    setInputText('');
+    const now = Date.now();
+    if (!options.retry && now - lastRequestAt < COOLDOWN_MS) {
+      setError('Vui long doi 2 giay truoc khi gui tiep.');
+      return;
+    }
+
+    if (!options.retry) {
+      setMessages((current) => [...current, createMessage('user', normalized)]);
+      setInputText('');
+    }
     setError(null);
+    setTimeoutWarning(false);
+    setRetryText(null);
     setLoading(true);
+    setLastRequestAt(now);
+
+    const warningTimer = window.setTimeout(() => {
+      setTimeoutWarning(true);
+    }, 3000);
 
     try {
-      const result = await chatService.checkSymptoms(text);
+      const result = await chatService.checkSymptoms(normalized);
       setMessages((current) => [...current, createMessage('assistant', result)]);
     } catch (requestError) {
-      setError(requestError.message || 'Co loi xay ra, vui long thu lai.');
+      setRetryText(normalized);
+      setError(errorMessage(requestError));
     } finally {
+      window.clearTimeout(warningTimer);
+      setTimeoutWarning(false);
       setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    await sendMessage(inputText);
+  };
+
+  const handleRetry = async () => {
+    if (retryText) {
+      await sendMessage(retryText, { retry: true });
     }
   };
 
@@ -74,13 +128,26 @@ export default function ChatbotPage() {
           {loading && (
             <article className={`${styles.message} ${styles.aiMessage}`}>
               <span className={styles.messageLabel}>AI</span>
-              <p>Dang xu ly...</p>
+              <p>
+                <span className={styles.spinner} aria-hidden="true" />
+                Dang xu ly...
+              </p>
             </article>
           )}
           <div ref={messagesEndRef} />
         </div>
 
-        {error && <div className={styles.errorBox}>{error}</div>}
+        {timeoutWarning && <div className={styles.warningBox}>Yeu cau dang lau hon du kien, vui long doi them trong giay lat.</div>}
+        {error && (
+          <div className={styles.errorBox}>
+            <span>{error}</span>
+            {retryText && !loading && (
+              <button type="button" onClick={handleRetry}>
+                Thu lai
+              </button>
+            )}
+          </div>
+        )}
 
         <form className={styles.inputBar} onSubmit={handleSubmit}>
           <label className={styles.inputLabel} htmlFor="symptoms">
