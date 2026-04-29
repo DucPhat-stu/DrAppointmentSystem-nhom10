@@ -28,4 +28,12 @@ export const aiTemplateService = {
     });
     return response.data;
   },
+
+  async preview(payload) {
+    const response = await aiApi('/api/v1/ai/templates/preview', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return response.data;
+  },
 };

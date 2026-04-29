@@ -34,6 +34,7 @@ export default function AdminPromptPage() {
   const [form, setForm] = useState(emptyForm);
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState(null);
+  const [preview, setPreview] = useState('');
 
   const activeTemplate = useMemo(() => templates.find((template) => template.active), [templates]);
 
@@ -80,6 +81,20 @@ export default function AdminPromptPage() {
       await loadTemplates();
     } catch (requestError) {
       setError(requestError.message || 'Khong the activate template.');
+    }
+  };
+
+  const handlePreview = async () => {
+    setError(null);
+    try {
+      setPreview(await aiTemplateService.preview({
+        template: form.template,
+        symptoms: 'Ho khan, sot cao',
+        duration: 'ONE_TO_THREE_DAYS',
+        description: 'Met moi va mat ngu',
+      }));
+    } catch (requestError) {
+      setError(requestError.message || 'Khong the preview prompt template.');
     }
   };
 
@@ -152,9 +167,15 @@ export default function AdminPromptPage() {
               required
             />
           </label>
-          <button className={styles.primaryButton} type="submit">
-            Save template
-          </button>
+          {preview && <pre className={styles.preview}>{preview}</pre>}
+          <div className={styles.actions}>
+            <button className={styles.secondaryButton} type="button" onClick={handlePreview}>
+              Preview
+            </button>
+            <button className={styles.primaryButton} type="submit">
+              Save template
+            </button>
+          </div>
         </form>
       </section>
     </main>

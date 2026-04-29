@@ -3,6 +3,7 @@ package com.healthcare.ai.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.healthcare.ai.dto.PromptTemplateRequest;
+import com.healthcare.ai.dto.PromptTemplatePreviewRequest;
 import com.healthcare.ai.dto.PromptTemplateResponse;
 import com.healthcare.ai.entity.PromptTemplateEntity;
 import com.healthcare.ai.repository.PromptTemplateJpaRepository;
@@ -84,6 +85,25 @@ public class PromptTemplateService {
         });
         target.setActive(true);
         return toResponse(repository.save(target));
+    }
+
+    public String preview(PromptTemplatePreviewRequest request) {
+        String description = request.description() == null || request.description().isBlank()
+                ? "None"
+                : request.description().trim();
+        String preview = request.template().trim()
+                .replace("{{ symptoms }}", request.symptoms().trim())
+                .replace("{{symptoms}}", request.symptoms().trim())
+                .replace("{{ duration }}", request.duration().label())
+                .replace("{{duration}}", request.duration().label())
+                .replace("{{ description }}", description)
+                .replace("{{description}}", description);
+
+        if (preview.contains("{{") || preview.contains("}}")) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Template preview has unresolved placeholders");
+        }
+
+        return preview;
     }
 
     private PromptTemplateEntity find(UUID id) {

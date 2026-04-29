@@ -1,6 +1,7 @@
 package com.healthcare.ai.web;
 
 import com.healthcare.ai.dto.PromptTemplateRequest;
+import com.healthcare.ai.dto.PromptTemplatePreviewRequest;
 import com.healthcare.ai.dto.PromptTemplateResponse;
 import com.healthcare.ai.service.PromptTemplateService;
 import com.healthcare.shared.api.ApiResponse;
@@ -42,6 +43,11 @@ public class PromptTemplateController {
     @GetMapping("/{id}")
     public ApiResponse<PromptTemplateResponse> get(@PathVariable UUID id) {
         return apiResponseFactory.success("Prompt template loaded", service.get(id));
+    }
+
+    @PostMapping("/preview")
+    public ApiResponse<String> preview(@Valid @RequestBody PromptTemplatePreviewRequest request) {
+        return apiResponseFactory.success("Prompt template preview completed", service.preview(request));
     }
 
     @PostMapping
