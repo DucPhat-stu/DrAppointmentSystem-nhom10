@@ -12,6 +12,7 @@ const publicLinks = [
 const authLinks = [
   { to: '/doctors', label: 'Doctors' },
   { to: '/appointments/book', label: 'Book Now' },
+  { to: '/chat', label: 'AI Chat' },
   { to: '/notifications', label: 'Notifications' },
 ];
 

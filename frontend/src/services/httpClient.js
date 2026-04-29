@@ -10,6 +10,7 @@ const SERVICE_URLS = {
   doctor: import.meta.env.VITE_DOCTOR_URL ?? 'http://localhost:8083',
   appointment: import.meta.env.VITE_APPOINTMENT_URL ?? 'http://localhost:8084',
   notification: import.meta.env.VITE_NOTIFICATION_URL ?? 'http://localhost:8085',
+  ai: import.meta.env.VITE_AI_URL ?? 'http://localhost:8087',
 };
 
 function buildUrl(service, path) {
@@ -142,3 +143,4 @@ export const userApi = (path, options) => httpClient('user', path, options);
 export const doctorApi = (path, options) => httpClient('doctor', path, options);
 export const appointmentApi = (path, options) => httpClient('appointment', path, options);
 export const notificationApi = (path, options) => httpClient('notification', path, options);
+export const aiApi = (path, options) => httpClient('ai', path, options);

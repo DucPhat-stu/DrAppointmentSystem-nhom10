@@ -11,6 +11,7 @@ import AppointmentDetailPage from '../pages/AppointmentDetailPage.jsx';
 import MyAppointmentsPage from '../pages/MyAppointmentsPage.jsx';
 import ProfilePage from '../pages/ProfilePage.jsx';
 import NotificationPage from '../pages/NotificationPage.jsx';
+import ChatbotPage from '../pages/ChatbotPage.jsx';
 import DoctorSchedulePage from '../pages/DoctorSchedulePage.jsx';
 import DoctorAppointmentDashboardPage from '../pages/DoctorAppointmentDashboardPage.jsx';
 import DoctorLeavePage from '../pages/DoctorLeavePage.jsx';
@@ -93,6 +94,10 @@ export const router = createBrowserRouter([
       {
         path: '/notifications',
         element: <NotificationPage />,
+      },
+      {
+        path: '/chat',
+        element: <ChatbotPage />,
       },
       {
         path: '/doctor/schedules',
