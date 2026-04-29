@@ -99,6 +99,45 @@ export default function ChatbotPage() {
     }
   };
 
+  const sendStructuredMessage = async (payload) => {
+    const userSummary = [
+      `Trieu chung: ${payload.symptoms}`,
+      `Thoi gian: ${DURATION_OPTIONS.find((option) => option.value === payload.duration)?.label}`,
+      payload.description ? `Mo ta them: ${payload.description}` : null,
+    ].filter(Boolean).join('. ');
+
+    const now = Date.now();
+    if (now - lastRequestAt < COOLDOWN_MS) {
+      setError('Vui long doi 2 giay truoc khi gui tiep.');
+      return;
+    }
+
+    setMessages((current) => [...current, createMessage('user', userSummary)]);
+    setError(null);
+    setTimeoutWarning(false);
+    setRetryText(null);
+    setLoading(true);
+    setLastRequestAt(now);
+
+    const warningTimer = window.setTimeout(() => {
+      setTimeoutWarning(true);
+    }, 3000);
+
+    try {
+      const result = await chatService.checkStructuredSymptoms(payload);
+      setMessages((current) => [...current, createMessage('assistant', result)]);
+      setSymptoms('');
+      setDuration('');
+      setDescription('');
+    } catch (requestError) {
+      setError(errorMessage(requestError));
+    } finally {
+      window.clearTimeout(warningTimer);
+      setTimeoutWarning(false);
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (mode === 'structured') {
@@ -106,14 +145,11 @@ export default function ChatbotPage() {
         setError('Vui long nhap trieu chung va thoi gian xuat hien.');
         return;
       }
-      await sendMessage([
-        `Trieu chung: ${symptoms.trim()}`,
-        `Thoi gian: ${DURATION_OPTIONS.find((option) => option.value === duration)?.label}`,
-        description.trim() ? `Mo ta them: ${description.trim()}` : null,
-      ].filter(Boolean).join('. '));
-      setSymptoms('');
-      setDuration('');
-      setDescription('');
+      await sendStructuredMessage({
+        symptoms: symptoms.trim(),
+        duration,
+        description: description.trim(),
+      });
       return;
     }
 

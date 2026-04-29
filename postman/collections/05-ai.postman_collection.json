@@ -67,6 +67,39 @@
           ]
         }
       }
+    },
+    {
+      "name": "Check structured symptoms",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"symptoms\": \"Ho khan, sot cao, dau dau\",\n  \"duration\": \"ONE_TO_THREE_DAYS\",\n  \"description\": \"Met moi va mat ngu\"\n}"
+        },
+        "url": {
+          "raw": "{{ai_base_url}}/api/v1/ai/check/structured",
+          "host": [
+            "{{ai_base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "ai",
+            "check",
+            "structured"
+          ]
+        }
+      }
     }
   ]
 }

@@ -1,6 +1,7 @@
 package com.healthcare.ai.web;
 
 import com.healthcare.ai.dto.AICheckRequest;
+import com.healthcare.ai.dto.StructuredAICheckRequest;
 import com.healthcare.ai.service.AIConversationService;
 import com.healthcare.shared.api.ApiResponse;
 import com.healthcare.shared.common.web.ApiResponseFactory;
@@ -26,6 +27,14 @@ public class AIController {
         return apiResponseFactory.success(
                 "AI symptom check completed",
                 conversationService.checkSymptoms(request.text())
+        );
+    }
+
+    @PostMapping("/check/structured")
+    public ApiResponse<String> checkStructuredSymptoms(@Valid @RequestBody StructuredAICheckRequest request) {
+        return apiResponseFactory.success(
+                "AI structured symptom check completed",
+                conversationService.checkStructuredSymptoms(request)
         );
     }
 }

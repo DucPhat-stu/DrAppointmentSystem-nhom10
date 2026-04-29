@@ -9,4 +9,13 @@ export const chatService = {
 
     return response.data;
   },
+
+  async checkStructuredSymptoms(payload) {
+    const response = await aiApi('/api/v1/ai/check/structured', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    return response.data;
+  },
 };
