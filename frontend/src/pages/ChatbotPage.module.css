@@ -146,6 +146,35 @@
   background: rgba(2, 6, 23, 0.28);
 }
 
+.composer {
+  display: grid;
+  gap: 10px;
+}
+
+.modeSwitch {
+  display: inline-flex;
+  width: fit-content;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.modeSwitch button {
+  min-width: 66px;
+  min-height: 30px;
+  border: 0;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+.modeSwitch .activeMode {
+  background: rgba(59, 130, 246, 0.22);
+  color: var(--color-text-primary);
+}
+
 .inputLabel {
   position: absolute;
   width: 1px;
@@ -155,10 +184,10 @@
   white-space: nowrap;
 }
 
-.inputBar textarea {
+.inputBar textarea,
+.structuredGrid input,
+.structuredGrid select {
   min-height: 54px;
-  max-height: 160px;
-  resize: vertical;
   padding: 12px 14px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -167,7 +196,34 @@
   line-height: 1.45;
 }
 
-.inputBar button {
+.inputBar textarea {
+  max-height: 160px;
+  resize: vertical;
+}
+
+.structuredGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px;
+  gap: 10px;
+}
+
+.structuredGrid label {
+  display: grid;
+  gap: 6px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.structuredGrid .fullField {
+  grid-column: 1 / -1;
+}
+
+.structuredGrid textarea {
+  min-height: 76px;
+}
+
+.inputBar > button {
   min-width: 92px;
   min-height: 44px;
   align-self: end;
@@ -178,7 +234,7 @@
   font-weight: var(--font-weight-semibold);
 }
 
-.inputBar button:disabled,
+.inputBar > button:disabled,
 .inputBar textarea:disabled {
   cursor: not-allowed;
   opacity: 0.62;
@@ -197,11 +253,12 @@
     max-width: 94%;
   }
 
-  .inputBar {
+  .inputBar,
+  .structuredGrid {
     grid-template-columns: 1fr;
   }
 
-  .inputBar button {
+  .inputBar > button {
     width: 100%;
   }
 

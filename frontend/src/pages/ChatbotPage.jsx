@@ -4,6 +4,12 @@ import { chatService } from '../services/chatService.js';
 import styles from './ChatbotPage.module.css';
 
 const COOLDOWN_MS = 2000;
+const DURATION_OPTIONS = [
+  { value: '', label: 'Chon thoi gian' },
+  { value: 'LESS_THAN_ONE_DAY', label: 'Duoi 1 ngay' },
+  { value: 'ONE_TO_THREE_DAYS', label: '1-3 ngay' },
+  { value: 'MORE_THAN_THREE_DAYS', label: 'Hon 3 ngay' },
+];
 
 function createMessage(role, text) {
   return {
@@ -18,6 +24,10 @@ export default function ChatbotPage() {
     createMessage('assistant', 'Mo ta trieu chung cua ban, toi se goi y thong tin tham khao va chuyen khoa phu hop.'),
   ]);
   const [inputText, setInputText] = useState('');
+  const [mode, setMode] = useState('text');
+  const [symptoms, setSymptoms] = useState('');
+  const [duration, setDuration] = useState('');
+  const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [timeoutWarning, setTimeoutWarning] = useState(false);
@@ -91,6 +101,22 @@ export default function ChatbotPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (mode === 'structured') {
+      if (!symptoms.trim() || !duration) {
+        setError('Vui long nhap trieu chung va thoi gian xuat hien.');
+        return;
+      }
+      await sendMessage([
+        `Trieu chung: ${symptoms.trim()}`,
+        `Thoi gian: ${DURATION_OPTIONS.find((option) => option.value === duration)?.label}`,
+        description.trim() ? `Mo ta them: ${description.trim()}` : null,
+      ].filter(Boolean).join('. '));
+      setSymptoms('');
+      setDuration('');
+      setDescription('');
+      return;
+    }
+
     await sendMessage(inputText);
   };
 
@@ -150,18 +176,79 @@ export default function ChatbotPage() {
         )}
 
         <form className={styles.inputBar} onSubmit={handleSubmit}>
-          <label className={styles.inputLabel} htmlFor="symptoms">
-            Trieu chung
-          </label>
-          <textarea
-            id="symptoms"
-            value={inputText}
-            onChange={(event) => setInputText(event.target.value)}
-            placeholder="Mo ta trieu chung cua ban..."
-            maxLength={500}
-            disabled={loading}
-          />
-          <button type="submit" disabled={loading || !inputText.trim()}>
+          <div className={styles.composer}>
+            <div className={styles.modeSwitch} aria-label="Chat input mode">
+              <button
+                type="button"
+                className={mode === 'text' ? styles.activeMode : ''}
+                onClick={() => setMode('text')}
+                disabled={loading}
+              >
+                Text
+              </button>
+              <button
+                type="button"
+                className={mode === 'structured' ? styles.activeMode : ''}
+                onClick={() => setMode('structured')}
+                disabled={loading}
+              >
+                Form
+              </button>
+            </div>
+
+            {mode === 'text' ? (
+              <>
+                <label className={styles.inputLabel} htmlFor="symptomsText">
+                  Trieu chung
+                </label>
+                <textarea
+                  id="symptomsText"
+                  value={inputText}
+                  onChange={(event) => setInputText(event.target.value)}
+                  placeholder="Mo ta trieu chung cua ban..."
+                  maxLength={500}
+                  disabled={loading}
+                />
+              </>
+            ) : (
+              <div className={styles.structuredGrid}>
+                <label>
+                  <span>Trieu chung</span>
+                  <input
+                    value={symptoms}
+                    onChange={(event) => setSymptoms(event.target.value)}
+                    placeholder="Vi du: ho, sot, dau dau"
+                    maxLength={180}
+                    disabled={loading}
+                  />
+                </label>
+                <label>
+                  <span>Thoi gian</span>
+                  <select value={duration} onChange={(event) => setDuration(event.target.value)} disabled={loading}>
+                    {DURATION_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className={styles.fullField}>
+                  <span>Mo ta them</span>
+                  <textarea
+                    value={description}
+                    onChange={(event) => setDescription(event.target.value)}
+                    placeholder="Tinh trang, muc do dau, thuoc da dung..."
+                    maxLength={300}
+                    disabled={loading}
+                  />
+                </label>
+              </div>
+            )}
+          </div>
+          <button
+            type="submit"
+            disabled={loading || (mode === 'text' ? !inputText.trim() : !symptoms.trim() || !duration)}
+          >
             {loading ? 'Dang xu ly' : 'Gui'}
           </button>
         </form>
