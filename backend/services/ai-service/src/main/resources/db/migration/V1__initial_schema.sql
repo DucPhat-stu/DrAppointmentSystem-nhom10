@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS ai_service_schema_marker (
+    id SMALLINT PRIMARY KEY,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO ai_service_schema_marker (id)
+VALUES (1)
+ON CONFLICT (id) DO NOTHING;

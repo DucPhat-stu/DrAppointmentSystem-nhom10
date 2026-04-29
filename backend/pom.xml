@@ -28,6 +28,7 @@
         <module>services/doctor-service</module>
         <module>services/appointment-service</module>
         <module>services/notification-service</module>
+        <module>services/ai-service</module>
     </modules>
 
     <properties>

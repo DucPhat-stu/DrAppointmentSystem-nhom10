@@ -1,0 +1,55 @@
+server:
+  port: ${APP_PORT:8087}
+
+spring:
+  application:
+    name: ai-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/ai_db}
+    username: ${DB_USERNAME:healthcare}
+    password: ${DB_PASSWORD:healthcare}
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+  flyway:
+    enabled: true
+
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:true}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:true}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  pattern:
+    level: "%5p [traceId:%X{traceId:-},userId:%X{userId:-},role:%X{role:-}]"
+
+app:
+  service:
+    name: ai-service
+    description: AI symptom assistant and prompt management service.
+    database: ai_db
+    rabbitmq-enabled: false
+    redis-enabled: false
+
+ai:
+  gemini:
+    api-key: ${AI_API_KEY:}
+    model: ${AI_MODEL:gemini-1.5-flash}
+    base-url: ${AI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
+  timeout-ms: ${AI_TIMEOUT_MS:2000}
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:change-this-before-shared-environments}
