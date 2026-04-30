@@ -79,10 +79,7 @@ public class PromptTemplateService {
     @Transactional
     public PromptTemplateResponse activate(UUID id) {
         PromptTemplateEntity target = find(id);
-        repository.findAll().forEach(template -> {
-            template.setActive(false);
-            repository.save(template);
-        });
+        repository.deactivateAll();
         target.setActive(true);
         return toResponse(repository.save(target));
     }
