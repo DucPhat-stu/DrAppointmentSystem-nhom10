@@ -6,6 +6,7 @@ import com.healthcare.ai.config.AIClientProperties;
 import com.healthcare.ai.config.GeminiProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -53,6 +54,7 @@ public class AIClient {
             try {
                 String body = restClient.post()
                         .uri(geminiUrl())
+                        .contentType(MediaType.APPLICATION_JSON)
                         .body(requestBody(prompt))
                         .retrieve()
                         .body(String.class);
