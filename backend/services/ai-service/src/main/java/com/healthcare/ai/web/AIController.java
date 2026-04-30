@@ -6,6 +6,7 @@ import com.healthcare.ai.service.AIConversationService;
 import com.healthcare.shared.api.ApiResponse;
 import com.healthcare.shared.common.web.ApiResponseFactory;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,6 +40,7 @@ public class AIController {
     }
 
     @PostMapping("/preview/structured")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<String> previewStructuredPrompt(@Valid @RequestBody StructuredAICheckRequest request) {
         return apiResponseFactory.success(
                 "AI structured prompt preview completed",
