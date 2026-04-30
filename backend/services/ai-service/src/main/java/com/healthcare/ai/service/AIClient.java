@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.healthcare.ai.config.AIClientProperties;
 import com.healthcare.ai.config.GeminiProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -17,6 +19,7 @@ import java.util.Map;
 
 @Component
 public class AIClient {
+    private static final Logger log = LoggerFactory.getLogger(AIClient.class);
     private static final String FALLBACK_JSON = """
             {
               "possible_conditions": ["Khong xac dinh"],
@@ -42,6 +45,7 @@ public class AIClient {
 
     public String generate(String prompt) {
         if (geminiProperties.getApiKey() == null || geminiProperties.getApiKey().isBlank()) {
+            log.warn("Gemini API key is not configured, returning fallback response");
             return FALLBACK_JSON;
         }
 
@@ -55,7 +59,9 @@ public class AIClient {
 
                 return extractText(body);
             } catch (RestClientException | IllegalArgumentException exception) {
+                log.warn("Gemini API call attempt {} failed: {}", attempt + 1, exception.getMessage());
                 if (attempt == 1) {
+                    log.error("Gemini API failed after 2 attempts, returning fallback response");
                     return FALLBACK_JSON;
                 }
             }
