@@ -49,6 +49,10 @@ ai:
     model: ${AI_MODEL:gemini-1.5-flash}
     base-url: ${AI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
   timeout-ms: ${AI_TIMEOUT_MS:5000}
+  rate-limit:
+    enabled: ${AI_RATE_LIMIT_ENABLED:true}
+    per-user-per-minute: ${AI_RATE_LIMIT_PER_USER_PER_MINUTE:10}
+    global-per-minute: ${AI_RATE_LIMIT_GLOBAL_PER_MINUTE:100}
 
 security:
   jwt:
