@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     Starts Docker infrastructure (PostgreSQL, Redis, RabbitMQ), ensures the
-    service databases exist, then launches all 5 Spring Boot services in
+    service databases exist, then launches all 6 Spring Boot services in
     separate PowerShell windows. Flyway creates tables and seed data during
     each service startup.
 
@@ -41,7 +41,8 @@ $services = @(
     @{ Name = 'user-service';         Port = '8082'; Db = 'user_db' },
     @{ Name = 'doctor-service';       Port = '8083'; Db = 'doctor_db' },
     @{ Name = 'appointment-service';  Port = '8084'; Db = 'appointment_db' },
-    @{ Name = 'notification-service'; Port = '8085'; Db = 'notification_db' }
+    @{ Name = 'notification-service'; Port = '8085'; Db = 'notification_db' },
+    @{ Name = 'ai-service';           Port = '8087'; Db = 'ai_db' }
 )
 
 $infraServices = @('postgres', 'redis', 'rabbitmq')
@@ -221,7 +222,7 @@ if (-not $SkipInfra) {
 
     Write-Step 'Ensuring service databases'
     Ensure-ServiceDatabases -ServiceConfigs $services
-    Write-Ok 'auth_db, user_db, doctor_db, appointment_db, notification_db are ready'
+    Write-Ok 'auth_db, user_db, doctor_db, appointment_db, notification_db, ai_db are ready'
 }
 else {
     Write-Step 'Skipping Docker infrastructure startup'
