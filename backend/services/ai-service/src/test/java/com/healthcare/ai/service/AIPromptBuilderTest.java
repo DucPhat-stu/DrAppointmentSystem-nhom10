@@ -14,6 +14,7 @@ class AIPromptBuilderTest {
         String prompt = builder.buildTextPrompt("<b>Ho</b> va sot");
 
         assertThat(prompt).contains("Ho va sot");
+        assertThat(prompt).contains("<user_symptoms>");
         assertThat(prompt).doesNotContain("<b>");
     }
 
@@ -26,7 +27,9 @@ class AIPromptBuilderTest {
         ));
 
         assertThat(prompt).contains("Duration: one to three days");
-        assertThat(prompt).contains("Additional description: Met moi");
+        assertThat(prompt).contains("<user_symptoms>");
+        assertThat(prompt).contains("<user_description>");
+        assertThat(prompt).contains("Met moi");
         assertThat(prompt).doesNotContain("{{");
         assertThat(prompt).doesNotContain("}}");
     }
