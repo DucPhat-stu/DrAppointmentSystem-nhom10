@@ -1,18 +1,22 @@
 # Healthcare Platform MVP
 
-Repository này hiện ở trạng thái MVP nền tảng cho hệ thống healthcare.
+Repository này là MVP nền tảng cho hệ thống healthcare, gồm backend microservices, frontend React/Vite và hạ tầng local bằng Docker.
 
-- `backend/` là Maven multi-module gồm shared modules và 5 service.
-- `docker/compose.yml` dựng hạ tầng local gồm PostgreSQL, Redis và RabbitMQ.
+- `backend/` là Maven multi-module gồm shared modules và 6 services.
+- `docker/compose.yml` dựng PostgreSQL, Redis và RabbitMQ cho local development.
 - `frontend/` là React + Vite shell cho luồng auth/booking.
-- `auth-service` đã có API nghiệp vụ `register`, `login`, `refresh`, `logout`.
-- `user-service`, `doctor-service`, `appointment-service`, `notification-service` hiện mới ở mức foundation endpoint và hạ tầng khởi động.
+- `auth-service` có API `register`, `login`, `refresh`, `logout`.
+- `user-service`, `doctor-service`, `appointment-service`, `notification-service` có foundation endpoints và các phần nghiệp vụ theo module.
+- `ai-service` có API AI symptom assistant, structured prompt, prompt template management và Gemini health check.
 
 ## Repo Structure
 
 ```text
 backend/
   pom.xml
+  run-service.ps1
+  run-service.cmd
+  start-all.ps1
   shared/
     api-contract/
     common/
@@ -23,35 +27,36 @@ backend/
     doctor-service/
     appointment-service/
     notification-service/
+    ai-service/
 docker/
   compose.yml
   .env.example
+  postgres/
 frontend/
-  package.json
-  vite.config.js
 postman/
-  collections/
-  environments/
 docs/
-  *.md
 ```
 
 ## Prerequisites
 
-Để chạy local ổn định, máy cần có:
+Máy local cần có:
 
 - JDK `21`
-- Maven `3.9+` hoặc IntelliJ có bundled Maven
+- Maven `3.9+` hoặc IntelliJ bundled Maven
 - Docker Desktop
 - Node.js `18+`
+- SQL Workbench/J nếu muốn mở database bằng GUI SQL client
 
 Lưu ý:
 
-- Chạy backend từ thư mục `backend/` root bằng `-pl ... -am`. Không nên đứng trong từng service module để chạy riêng nếu shared modules chưa được build/install.
-- Nếu lệnh `mvn` không có trong `PATH`, thay `mvn` trong README bằng đường dẫn `mvn.cmd` trên máy bạn.
-- Đợi `postgres`, `redis`, `rabbitmq` lên trạng thái healthy trước khi chạy service để tránh lỗi kết nối lúc Spring Boot/Flyway khởi động.
+- Chạy backend từ thư mục `backend/` bằng script `run-service.ps1` hoặc `run-service.cmd`.
+- Không cần đứng trong từng service module để chạy riêng; script tự gọi Maven với `-pl services/<service> -am`.
+- Nếu `mvn` không có trong `PATH`, script sẽ cố tìm Maven bundled trong IntelliJ. Có thể truyền `-MavenCommand` nếu cần.
+- Đợi `postgres`, `redis`, `rabbitmq` healthy trước khi chạy service để tránh lỗi kết nối lúc Spring Boot/Flyway khởi động.
 
 ## Start Local Infrastructure
+
+Chạy toàn bộ hạ tầng:
 
 ```powershell
 cd docker
@@ -60,13 +65,21 @@ docker compose up -d
 docker compose ps
 ```
 
-PostgreSQL được khởi tạo sẵn 5 database:
+Hoặc từ thư mục `backend/`, chạy hạ tầng và tạo đủ database bằng script:
+
+```powershell
+cd backend
+.\start-all.ps1 -InfraOnly
+```
+
+PostgreSQL local có 6 database:
 
 - `auth_db`
 - `user_db`
 - `doctor_db`
 - `appointment_db`
 - `notification_db`
+- `ai_db`
 
 Giá trị mặc định trong `docker/.env.example`:
 
@@ -81,160 +94,196 @@ Giá trị mặc định trong `docker/.env.example`:
 
 RabbitMQ management UI:
 
-- `http://localhost:15673`
-- username: `healthcare`
-- password: `healthcare`
+- URL: `http://localhost:15673`
+- Username: `healthcare`
+- Password: `healthcare`
+
+## Open DB With SQL Workbench/J
+
+Sau khi PostgreSQL container đã chạy, tạo connection trong SQL Workbench/J:
+
+| Field | Value |
+| --- | --- |
+| Driver | PostgreSQL |
+| URL | `jdbc:postgresql://localhost:5432/auth_db` |
+| Username | `healthcare` |
+| Password | `healthcare` |
+| Autocommit | Bật hoặc để mặc định |
+
+Đổi database trong URL theo service cần xem:
+
+| Service | Database URL |
+| --- | --- |
+| `auth-service` | `jdbc:postgresql://localhost:5432/auth_db` |
+| `user-service` | `jdbc:postgresql://localhost:5432/user_db` |
+| `doctor-service` | `jdbc:postgresql://localhost:5432/doctor_db` |
+| `appointment-service` | `jdbc:postgresql://localhost:5432/appointment_db` |
+| `notification-service` | `jdbc:postgresql://localhost:5432/notification_db` |
+| `ai-service` | `jdbc:postgresql://localhost:5432/ai_db` |
+
+Nếu SQL Workbench/J chưa có PostgreSQL driver:
+
+1. Tải PostgreSQL JDBC driver tại `https://jdbc.postgresql.org/download/`.
+2. Trong SQL Workbench/J, mở `Manage Drivers`.
+3. Chọn hoặc tạo driver `PostgreSQL`.
+4. Thêm file `.jar` vừa tải vào driver library.
+5. Lưu driver rồi reconnect bằng URL ở bảng trên.
+
+Smoke query:
+
+```sql
+select current_database(), current_user;
+select table_schema, table_name
+from information_schema.tables
+where table_schema = 'public'
+order by table_name;
+```
 
 ## Service Matrix
 
-| Service | Default port | Database | Extra infra | Current scope |
+| Service | Default port | Database | Extra infra | Scope |
 | --- | --- | --- | --- | --- |
 | `auth-service` | `8086` | `auth_db` | Postgres | Auth API + seed data |
-| `user-service` | `8082` | `user_db` | Postgres | Foundation only |
-| `doctor-service` | `8083` | `doctor_db` | Postgres | Foundation only |
-| `appointment-service` | `8084` | `appointment_db` | Postgres + Redis + RabbitMQ | Foundation only |
-| `notification-service` | `8085` | `notification_db` | Postgres + RabbitMQ | Foundation only |
+| `user-service` | `8082` | `user_db` | Postgres | User/profile APIs |
+| `doctor-service` | `8083` | `doctor_db` | Postgres | Doctor/schedule APIs |
+| `appointment-service` | `8084` | `appointment_db` | Postgres + Redis + RabbitMQ | Appointment APIs |
+| `notification-service` | `8085` | `notification_db` | Postgres + RabbitMQ | Notification APIs |
+| `ai-service` | `8087` | `ai_db` | Postgres + Gemini API | AI symptom assistant + prompt templates |
 
-Tất cả service đều expose:
+Tất cả service expose:
 
 - `GET /actuator/health`
 - `GET /api/v1/foundation/ping`
 
-Riêng `auth-service` hiện có thêm:
+## Run All Backend Services
 
-- `POST /api/v1/auth/register`
-- `POST /api/v1/auth/login`
-- `POST /api/v1/auth/refresh`
-- `POST /api/v1/auth/logout`
-
-## Run Backend Services
-
-Use `.\run-service.cmd <service-name> -Clean` from the `backend/` directory. The wrapper bypasses PowerShell execution-policy friction, resolves `JAVA_HOME` for JDK 21, and locates Maven automatically before calling `spring-boot:run`.
-
-If local PostgreSQL was initialized earlier with another role set or another project volume, run `powershell -NoProfile -ExecutionPolicy Bypass -File .\docker\postgres\ensure-healthcare-databases.ps1` once from the repo root to create the expected `healthcare` role and service databases.
-Mẫu biến môi trường chung:
-
-```powershell
-
-$env:DB_USERNAME='healthcare'
-$env:DB_PASSWORD='healthcare'
-$env:JWT_SECRET='change-this-before-shared-environments'
-$env:RABBITMQ_URL='amqp://healthcare:healthcare@localhost:5673'
-$env:REDIS_HOST='localhost'
-$env:REDIS_PORT='6379'
-```
-
-Chạy từ `backend/` root:
+Từ thư mục `backend/`, chạy toàn bộ hạ tầng và mở 6 cửa sổ PowerShell cho 6 services:
 
 ```powershell
 cd backend
+.\start-all.ps1
 ```
 
-### Auth Service
+Chạy clean build cho tất cả services:
 
 ```powershell
+.\start-all.ps1 -Clean
+```
+
+Nếu đã tự chạy Docker infra trước đó:
+
+```powershell
+.\start-all.ps1 -SkipInfra
+```
+
+## Run One Service With run-service
+
+Khuyến nghị dùng `run-service.cmd` nếu máy bị chặn PowerShell execution policy:
+
+```powershell
+cd backend
 .\run-service.cmd auth-service -Clean
 ```
 
-### User Service
+Hoặc chạy trực tiếp file PowerShell:
 
 ```powershell
+cd backend
+powershell -NoProfile -ExecutionPolicy Bypass -File .\run-service.ps1 -Service auth-service -Clean
+```
+
+Chạy từng service:
+
+```powershell
+.\run-service.cmd auth-service -Clean
 .\run-service.cmd user-service -Clean
-```
-
-### Doctor Service
-
-```powershell
 .\run-service.cmd doctor-service -Clean
-```
-
-### Appointment Service
-
-```powershell
 .\run-service.cmd appointment-service -Clean
+.\run-service.cmd notification-service -Clean
+.\run-service.cmd ai-service -Clean
 ```
 
-### Notification Service
+`run-service.ps1` tự set default local:
+
+- `APP_PORT` theo service
+- `DB_URL` theo database của service
+- `DB_USERNAME=healthcare`
+- `DB_PASSWORD=healthcare`
+- `JWT_SECRET=local-dev-healthcare-jwt-secret-change-before-prod`
+- `RABBITMQ_URL=amqp://healthcare:healthcare@localhost:5673`
+- `REDIS_HOST=localhost`
+- `REDIS_PORT=6379`
+- `AI_API_KEY` cho `ai-service` nếu biến môi trường này chưa được set
+
+Override port hoặc database khi cần:
 
 ```powershell
-.\run-service.cmd notification-service -Clean
+.\run-service.cmd ai-service -AppPort 8097 -DbUrl "jdbc:postgresql://localhost:5432/ai_db"
 ```
+
+## Service Base URLs
+
+| Service | Base URL |
+| --- | --- |
+| `auth-service` | `http://localhost:8086` |
+| `user-service` | `http://localhost:8082` |
+| `doctor-service` | `http://localhost:8083` |
+| `appointment-service` | `http://localhost:8084` |
+| `notification-service` | `http://localhost:8085` |
+| `ai-service` | `http://localhost:8087` |
 
 ## Auth Seed Data
 
-`auth-service` có Flyway seed tại `backend/services/auth-service/src/main/resources/db/migration/V3__seed_mvp_users.sql`.
+`auth-service` có Flyway seed tại:
 
-Tài khoản seed local:
+```text
+backend/services/auth-service/src/main/resources/db/migration/V3__seed_mvp_users.sql
+```
+
+Tài khoản local:
 
 - Patient: `patient01@healthcare.local / Patient@123`
 - Doctor: `doctor01@healthcare.local / Doctor@123`
 
-Seed này được dùng cho login smoke test và Postman collection.
-
 ## Postman
 
-Có sẵn collection và environment để test local auth flow:
+Collection và environment local:
 
 - `postman/collections/00-auth.postman_collection.json`
 - `postman/environments/healthcare-local.postman_environment.json`
 
-Flow hiện có trong collection:
-
-- register patient
-- login patient actor
-- refresh patient token
-- logout patient
-- login doctor actor
-- refresh doctor token
-- logout doctor
-
-### Service Base URLs
-
-| Service | Base URL | Ghi chú |
-| --- | --- | --- |
-| `auth-service` | `http://localhost:8086` | Có API nghiệp vụ auth |
-| `user-service` | `http://localhost:8082` | Mới có foundation endpoint |
-| `doctor-service` | `http://localhost:8083` | Mới có foundation endpoint |
-| `appointment-service` | `http://localhost:8084` | Mới có foundation endpoint |
-| `notification-service` | `http://localhost:8085` | Mới có foundation endpoint |
-
-### Postman URLs
-
-| Service | Method | URL | Ghi chú |
-| --- | --- | --- | --- |
-| `auth-service` | `POST` | `http://localhost:8086/api/v1/auth/register` | Đăng ký patient |
-| `auth-service` | `POST` | `http://localhost:8086/api/v1/auth/login` | Đăng nhập theo actor `PATIENT` hoặc `DOCTOR` |
-| `auth-service` | `POST` | `http://localhost:8086/api/v1/auth/refresh` | Lấy access token mới |
-| `auth-service` | `POST` | `http://localhost:8086/api/v1/auth/logout` | Thu hồi refresh token |
-| `auth-service` | `GET` | `http://localhost:8086/api/v1/foundation/ping` | Foundation smoke check |
-| `auth-service` | `GET` | `http://localhost:8086/actuator/health` | Health check |
-| `user-service` | `GET` | `http://localhost:8082/api/v1/foundation/ping` | Foundation smoke check |
-| `user-service` | `GET` | `http://localhost:8082/actuator/health` | Health check |
-| `doctor-service` | `GET` | `http://localhost:8083/api/v1/foundation/ping` | Foundation smoke check |
-| `doctor-service` | `GET` | `http://localhost:8083/actuator/health` | Health check |
-| `appointment-service` | `GET` | `http://localhost:8084/api/v1/foundation/ping` | Foundation smoke check |
-| `appointment-service` | `GET` | `http://localhost:8084/actuator/health` | Health check |
-| `notification-service` | `GET` | `http://localhost:8085/api/v1/foundation/ping` | Foundation smoke check |
-| `notification-service` | `GET` | `http://localhost:8085/actuator/health` | Health check |
-
-### Postman Environment Suggestion
-
-Nếu bạn muốn tạo environment chung cho tất cả service trong Postman, có thể dùng các biến sau:
+Postman environment nên có:
 
 - `baseUrlAuth=http://localhost:8086`
 - `baseUrlUser=http://localhost:8082`
 - `baseUrlDoctor=http://localhost:8083`
 - `baseUrlAppointment=http://localhost:8084`
 - `baseUrlNotification=http://localhost:8085`
+- `baseUrlAI=http://localhost:8087`
 - `patientActor=PATIENT`
 - `doctorActor=DOCTOR`
 
-Lưu ý cho Postman:
+## Smoke Check
 
-- `baseUrlAuth` chỉ nên là host gốc, không kèm `/api/v1`.
-- Collection local đã tự thêm `/api/v1/auth/...` trong từng request.
-- Body login hỗ trợ thêm trường tùy chọn `"actor"` với giá trị `PATIENT` hoặc `DOCTOR`.
-- Nếu bạn thấy response HTML `Apache/2.4...` hoặc `404 Not Found` trên port `8081`, bạn đang gọi nhầm service khác trên máy chứ không phải `auth-service`.
+Sau khi chạy services:
+
+```powershell
+Invoke-WebRequest http://localhost:8086/actuator/health
+Invoke-WebRequest http://localhost:8082/actuator/health
+Invoke-WebRequest http://localhost:8083/actuator/health
+Invoke-WebRequest http://localhost:8084/actuator/health
+Invoke-WebRequest http://localhost:8085/actuator/health
+Invoke-WebRequest http://localhost:8087/actuator/health
+
+Invoke-WebRequest http://localhost:8086/api/v1/foundation/ping
+Invoke-WebRequest http://localhost:8082/api/v1/foundation/ping
+Invoke-WebRequest http://localhost:8083/api/v1/foundation/ping
+Invoke-WebRequest http://localhost:8084/api/v1/foundation/ping
+Invoke-WebRequest http://localhost:8085/api/v1/foundation/ping
+Invoke-WebRequest http://localhost:8087/api/v1/foundation/ping
+```
+
+Lưu ý: `ai-service` health có thêm Gemini health indicator. Nếu `AI_API_KEY` không đúng hoặc mạng không gọi được Gemini, `/actuator/health` có thể báo `DOWN` dù service đã start.
 
 ## Frontend
 
@@ -244,33 +293,21 @@ cmd /c npm.cmd install
 cmd /c npm.cmd run dev
 ```
 
-Frontend Vite chạy mặc định tại:
+Frontend Vite mặc định chạy tại:
 
 - `http://localhost:5173`
 
-## Smoke Check
-
-Sau khi chạy service, nên kiểm tra nhanh:
-
-```powershell
-Invoke-WebRequest http://localhost:8086/actuator/health
-Invoke-WebRequest http://localhost:8086/api/v1/foundation/ping
-Invoke-WebRequest http://localhost:8082/api/v1/foundation/ping
-Invoke-WebRequest http://localhost:8083/api/v1/foundation/ping
-Invoke-WebRequest http://localhost:8084/api/v1/foundation/ping
-Invoke-WebRequest http://localhost:8085/api/v1/foundation/ping
-```
-
-Nếu chỉ test luồng nghiệp vụ hiện tại, chỉ cần dựng infra rồi chạy `auth-service`.
-
 ## Common Startup Issues
 
-- `Connection refused` tới PostgreSQL, Redis hoặc RabbitMQ: kiểm tra lại `docker compose ps` và đợi container healthy.
-- `mvn is not recognized`: cài Maven vào `PATH` hoặc dùng Maven bundled từ IntelliJ.
-- Lỗi thiếu shared module khi chạy service: hãy chạy từ `backend/` root với `-pl <service> -am`.
-- Lỗi Flyway trên `auth-service`: kiểm tra `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` có trỏ đúng `auth_db` hay không.
-- Postman trả về HTML `404 Not Found` từ `Apache/2.4`: thường là bạn đang gọi sai port local. Với repo này, `auth-service` nên chạy ở `http://localhost:8086`.
+- `Connection refused` tới PostgreSQL, Redis hoặc RabbitMQ: kiểm tra `docker compose ps` và đợi container healthy.
+- `Port ... is already in use`: service khác đang dùng port đó; dừng process hoặc truyền `-AppPort`.
+- `mvn is not recognized`: cài Maven vào `PATH`, dùng IntelliJ bundled Maven, hoặc truyền `-MavenCommand`.
+- Lỗi thiếu shared module: chạy từ `backend/` bằng `run-service.ps1` hoặc `run-service.cmd`.
+- Lỗi Flyway/database: kiểm tra `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` đúng database của service.
+- Nếu PostgreSQL volume cũ thiếu role/database, chạy từ repo root:
 
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\docker\postgres\ensure-healthcare-databases.ps1
+```
 
-
-
+- Postman trả HTML `Apache/2.4` hoặc `404 Not Found` trên port `8081`: đang gọi nhầm service/port local. Với repo này, `auth-service` chạy ở `http://localhost:8086`.

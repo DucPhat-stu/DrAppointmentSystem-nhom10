@@ -50,33 +50,34 @@ export function AppProviders({ children }) {
    * Login action – calls auth-service API, sets session.
    * Falls back to mock if API is unavailable.
    */
-  const loginAction = useCallback(async ({ email, password, actor = 'PATIENT' }) => {
+  const loginAction = useCallback(async ({ email, password, actor }) => {
     try {
       const response = await authService.login({ email, password, actor });
 
       const sessionData = {
         userId: response.data?.userId ?? null,
         email: response.data?.email ?? email,
-        role: response.data?.role ?? actor,
+        role: response.data?.role ?? actor ?? 'PATIENT',
         accessToken: response.data?.accessToken ?? null,
         refreshToken: response.data?.refreshToken ?? null,
         fullName: response.data?.fullName ?? email.split('@')[0],
       };
 
       setSession(sessionData);
-      return { success: true };
+      return { success: true, session: sessionData };
     } catch (err) {
       // If backend is unavailable, allow mock auth only during local development.
       if (allowMockAuthFallback && !(err instanceof ApiError)) {
         console.warn('[Auth] Backend unreachable, using mock session for dev.');
-        setSession({
+        const mockSession = {
           email,
-          role: actor,
+          role: actor ?? 'PATIENT',
           accessToken: 'mock-dev-token',
           refreshToken: 'mock-refresh-token',
           fullName: email.split('@')[0],
-        });
-        return { success: true, mock: true };
+        };
+        setSession(mockSession);
+        return { success: true, mock: true, session: mockSession };
       }
       throw err;
     }

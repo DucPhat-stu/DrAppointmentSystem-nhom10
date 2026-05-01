@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
-    [string]$AdminUser = 'postgres',
-    [string]$AdminPassword = 'root',
+    [string]$AdminUser = 'healthcare',
+    [string]$AdminPassword = 'healthcare',
     [string]$DbHost = 'localhost',
     [int]$Port = 5432,
     [string]$AppUser = 'healthcare',
@@ -25,14 +25,27 @@ $databases = @(
     'user_db',
     'doctor_db',
     'appointment_db',
-    'notification_db'
+    'notification_db',
+    'ai_db'
 )
 
 $escapedAppUser = Escape-SqlLiteral -Value $AppUser
 $escapedAppPassword = Escape-SqlLiteral -Value $AppPassword
 $databaseValues = ($databases | ForEach-Object { "    ('$_')" }) -join ",`r`n"
 
-$bootstrapSql = @"
+$roleSql = if ($AdminUser -eq $AppUser) {
+    @"
+DO `$do`$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '$escapedAppUser') THEN
+        RAISE EXCEPTION 'Role $escapedAppUser does not exist. Re-run this script with a PostgreSQL superuser.';
+    END IF;
+END
+`$do`$;
+"@
+}
+else {
+    @"
 DO `$do`$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '$escapedAppUser') THEN
@@ -42,6 +55,11 @@ BEGIN
     END IF;
 END
 `$do`$;
+"@
+}
+
+$bootstrapSql = @"
+$roleSql
 
 SELECT format('CREATE DATABASE %I OWNER %I', db_name, '$escapedAppUser')
 FROM (VALUES

@@ -28,11 +28,16 @@ export async function register({ firstName, lastName, email, password }) {
  * @param {object} payload - { email, password, actor? }
  * @returns {{ data: { accessToken, refreshToken, email, role } }}
  */
-export async function login({ email, password, actor = 'PATIENT' }) {
+export async function login({ email, password, actor }) {
+  const body = { email, password };
+  if (actor) {
+    body.actor = actor;
+  }
+
   const response = await authApi('/api/v1/auth/login', {
     method: 'POST',
     skipAuth: true,
-    body: JSON.stringify({ email, password, actor }),
+    body: JSON.stringify(body),
   });
   return response;
 }

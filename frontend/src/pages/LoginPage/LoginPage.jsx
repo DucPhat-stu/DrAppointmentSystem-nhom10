@@ -10,6 +10,17 @@ import { useAuth } from '../../hooks/useAuth.js';
 import { ApiError } from '../../services/httpClient.js';
 import styles from './LoginPage.module.css';
 
+function homePathForRole(role) {
+  const normalizedRole = role?.replace(/^ROLE_/, '').toUpperCase();
+  if (normalizedRole === 'DOCTOR') {
+    return '/doctor/appointments';
+  }
+  if (normalizedRole === 'ADMIN') {
+    return '/admin/prompts';
+  }
+  return '/doctors';
+}
+
 function validate(form) {
   const errors = {};
 
@@ -28,11 +39,11 @@ function validate(form) {
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { loginAction, isAuthenticated } = useAuth();
+  const { loginAction, isAuthenticated, session } = useAuth();
 
   // Redirect if already logged in
   if (isAuthenticated) {
-    navigate('/doctors', { replace: true });
+    navigate(homePathForRole(session?.role), { replace: true });
   }
 
   const justRegistered = location.state?.registered;
@@ -72,13 +83,12 @@ export default function LoginPage() {
     setSubmitError('');
 
     try {
-      await loginAction({
+      const result = await loginAction({
         email: form.email,
         password: form.password,
-        actor: 'PATIENT',
       });
 
-      navigate('/doctors');
+      navigate(homePathForRole(result.session?.role));
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.errorCode === 'UNAUTHORIZED' || err.status === 401) {
