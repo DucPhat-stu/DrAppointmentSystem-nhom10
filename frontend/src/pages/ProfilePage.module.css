@@ -40,6 +40,117 @@
   gap: var(--space-6);
 }
 
+.profileTools,
+.certSection {
+  padding: var(--space-5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.avatarPanel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.avatarPreview {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+}
+
+.avatarPreview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.uploadButton,
+.certForm button,
+.certItem button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 var(--space-4);
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-accent);
+  color: #fff;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+
+.uploadButton input {
+  display: none;
+}
+
+.certHeader h2 {
+  margin: 0 0 var(--space-1);
+  color: var(--color-text-primary);
+}
+
+.certHeader p {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.certForm {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.certForm input {
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text-primary);
+  padding: 0 var(--space-3);
+}
+
+.certList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.certItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.certItem div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.certItem span,
+.certItem small,
+.certList p {
+  color: var(--color-text-muted);
+}
+
+.certItem button {
+  background: #dc2626;
+}
+
 /* ---------- Loading Skeleton ---------- */
 .titleSkeleton {
   width: 200px;
@@ -166,5 +277,9 @@
     left: var(--space-4);
     right: var(--space-4);
     bottom: var(--space-4);
+  }
+
+  .certForm {
+    grid-template-columns: 1fr;
   }
 }

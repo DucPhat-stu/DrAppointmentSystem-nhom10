@@ -114,9 +114,10 @@ async function send(service, path, fetchOptions, headers) {
 
 export async function httpClient(service, path, options = {}) {
   const { skipAuth = false, retryOnUnauthorized = true, ...fetchOptions } = options;
+  const isFormData = typeof FormData !== 'undefined' && fetchOptions.body instanceof FormData;
 
   const headers = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(fetchOptions.headers ?? {}),
   };
 

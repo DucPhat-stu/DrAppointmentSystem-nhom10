@@ -8,7 +8,12 @@ import com.healthcare.user.entity.UserProfileEntity;
 import com.healthcare.user.repository.UserProfileJpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -40,6 +45,38 @@ public class UserProfileService {
                 .stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    @Transactional
+    public UserProfileResponse updateAvatar(UUID userId, MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Avatar file is required");
+        }
+        UserProfileEntity entity = userProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ApiException(
+                        ErrorCode.RESOURCE_NOT_FOUND,
+                        "Profile not found for user: " + userId));
+
+        String originalName = file.getOriginalFilename() == null ? "avatar" : file.getOriginalFilename();
+        String extension = "";
+        int dot = originalName.lastIndexOf('.');
+        if (dot >= 0) {
+            extension = originalName.substring(dot).replaceAll("[^A-Za-z0-9.]", "");
+        }
+        String fileName = userId + "-" + System.currentTimeMillis() + extension;
+        Path uploadDir = Path.of("uploads", "avatars").toAbsolutePath().normalize();
+        Path target = uploadDir.resolve(fileName).normalize();
+        try {
+            Files.createDirectories(uploadDir);
+            Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException exception) {
+            throw new ApiException(ErrorCode.SERVICE_UNAVAILABLE, "Unable to store avatar");
+        }
+
+        entity.setAvatarUrl("/uploads/avatars/" + fileName);
+        entity.setUpdatedAt(OffsetDateTime.now());
+        userProfileRepository.save(entity);
+        return toResponse(entity);
     }
 
     @Transactional

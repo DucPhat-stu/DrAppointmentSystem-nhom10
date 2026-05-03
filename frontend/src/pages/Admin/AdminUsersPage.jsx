@@ -21,7 +21,7 @@ function RoleBadge({ role }) {
 }
 
 export default function AdminUsersPage() {
-  const [filters, setFilters]   = useState({ role: '', status: '', page: 0, size: 20 });
+  const [filters, setFilters]   = useState({ role: '', status: '', q: '', page: 0, size: 20 });
   const [pageData, setPageData] = useState({ content: [], totalElements: 0, totalPages: 0 });
   const [loading, setLoading]   = useState(true);
   const [savingId, setSavingId] = useState(null);
@@ -88,6 +88,14 @@ export default function AdminUsersPage() {
 
       {/* Filters */}
       <form className={styles.filterBar} onSubmit={apply}>
+        <label className={styles.filterItem}>
+          <span>Tìm kiếm</span>
+          <input
+            value={filters.q}
+            onChange={e => setFilters(f => ({ ...f, q: e.target.value }))}
+            placeholder="Tên, email hoặc SĐT"
+          />
+        </label>
         <label className={styles.filterItem}>
           <span>Role</span>
           <select value={filters.role} onChange={e => setFilters(f => ({ ...f, role: e.target.value }))}>

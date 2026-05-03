@@ -7,10 +7,11 @@ import { authApi, appointmentApi, doctorApi } from './httpClient.js';
 
 // ---- Auth-service admin endpoints ----
 
-export function fetchAdminUsers({ page = 0, size = 20, role = '', status = '' } = {}) {
+export function fetchAdminUsers({ page = 0, size = 20, role = '', status = '', q = '' } = {}) {
   const params = new URLSearchParams({ page, size });
   if (role) params.set('role', role);
   if (status) params.set('status', status);
+  if (q) params.set('q', q);
   return authApi(`/api/v1/admin/users?${params}`);
 }
 

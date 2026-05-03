@@ -1,12 +1,22 @@
 import { useEffect, useState, useCallback } from 'react';
 import PersonalInfoSection from '../components/profile/PersonalInfoSection.jsx';
 import MedicalRecordList from '../components/profile/MedicalRecordList.jsx';
-import { fetchProfile, updateProfile, fetchMedicalRecords } from '../services/userService.js';
+import {
+  createCertification,
+  deleteCertification,
+  fetchCertifications,
+  fetchMedicalRecords,
+  fetchProfile,
+  updateProfile,
+  uploadAvatar,
+} from '../services/userService.js';
 import styles from './ProfilePage.module.css';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [records, setRecords] = useState([]);
+  const [certifications, setCertifications] = useState([]);
+  const [certForm, setCertForm] = useState({ name: '', issuingAuthority: '', issueDate: '', expiryDate: '', documentUrl: '' });
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingRecords, setLoadingRecords] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -40,10 +50,20 @@ export default function ProfilePage() {
     }
   }, []);
 
+  const loadCertifications = useCallback(async () => {
+    try {
+      const res = await fetchCertifications();
+      setCertifications(res.data ?? []);
+    } catch {
+      setCertifications([]);
+    }
+  }, []);
+
   useEffect(() => {
     loadProfile();
     loadRecords();
-  }, [loadProfile, loadRecords]);
+    loadCertifications();
+  }, [loadProfile, loadRecords, loadCertifications]);
 
   // Save profile
   async function handleSave(formData) {
@@ -63,6 +83,54 @@ export default function ProfilePage() {
   function showToast(type, message) {
     setToast({ type, message });
     setTimeout(() => setToast(null), 4000);
+  }
+
+  async function handleAvatarChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      setSaving(true);
+      const res = await uploadAvatar(file);
+      setProfile(res.data);
+      showToast('success', 'Cập nhật ảnh đại diện thành công.');
+    } catch (err) {
+      showToast('error', err.message || 'Không thể upload ảnh đại diện.');
+    } finally {
+      setSaving(false);
+      event.target.value = '';
+    }
+  }
+
+  async function handleCertSubmit(event) {
+    event.preventDefault();
+    try {
+      setSaving(true);
+      await createCertification({
+        ...certForm,
+        issueDate: certForm.issueDate || null,
+        expiryDate: certForm.expiryDate || null,
+      });
+      setCertForm({ name: '', issuingAuthority: '', issueDate: '', expiryDate: '', documentUrl: '' });
+      await loadCertifications();
+      showToast('success', 'Đã thêm chứng chỉ.');
+    } catch (err) {
+      showToast('error', err.message || 'Không thể lưu chứng chỉ.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteCertification(id) {
+    try {
+      setSaving(true);
+      await deleteCertification(id);
+      await loadCertifications();
+      showToast('success', 'Đã xoá chứng chỉ.');
+    } catch (err) {
+      showToast('error', err.message || 'Không thể xoá chứng chỉ.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loadingProfile) {
@@ -109,11 +177,54 @@ export default function ProfilePage() {
 
       {/* Sections */}
       <div className={styles.sections}>
+        <section className={styles.profileTools}>
+          <div className={styles.avatarPanel}>
+            <div className={styles.avatarPreview}>
+              {profile?.avatarUrl ? <img src={profile.avatarUrl} alt="" /> : <span>{profile?.fullName?.charAt(0) ?? 'U'}</span>}
+            </div>
+            <label className={styles.uploadButton}>
+              Upload avatar
+              <input type="file" accept="image/*" onChange={handleAvatarChange} disabled={saving} />
+            </label>
+          </div>
+        </section>
+
         <PersonalInfoSection
           profile={profile}
           onSave={handleSave}
           saving={saving}
         />
+
+        <section className={styles.certSection}>
+          <div className={styles.certHeader}>
+            <div>
+              <h2>Hồ sơ chuyên môn</h2>
+              <p>Quản lý chứng chỉ và giấy phép hành nghề cho bác sĩ.</p>
+            </div>
+          </div>
+          <form className={styles.certForm} onSubmit={handleCertSubmit}>
+            <input placeholder="Tên chứng chỉ" value={certForm.name} onChange={(e) => setCertForm((f) => ({ ...f, name: e.target.value }))} required />
+            <input placeholder="Đơn vị cấp" value={certForm.issuingAuthority} onChange={(e) => setCertForm((f) => ({ ...f, issuingAuthority: e.target.value }))} />
+            <input type="date" value={certForm.issueDate} onChange={(e) => setCertForm((f) => ({ ...f, issueDate: e.target.value }))} />
+            <input type="date" value={certForm.expiryDate} onChange={(e) => setCertForm((f) => ({ ...f, expiryDate: e.target.value }))} />
+            <input placeholder="URL tài liệu" value={certForm.documentUrl} onChange={(e) => setCertForm((f) => ({ ...f, documentUrl: e.target.value }))} />
+            <button type="submit" disabled={saving}>Thêm chứng chỉ</button>
+          </form>
+          <div className={styles.certList}>
+            {certifications.length === 0 ? (
+              <p>Chưa có chứng chỉ.</p>
+            ) : certifications.map((cert) => (
+              <article key={cert.id} className={styles.certItem}>
+                <div>
+                  <strong>{cert.name}</strong>
+                  <span>{cert.issuingAuthority || 'Không rõ đơn vị cấp'}</span>
+                  <small>{cert.issueDate || '-'} đến {cert.expiryDate || 'không thời hạn'}</small>
+                </div>
+                <button type="button" onClick={() => handleDeleteCertification(cert.id)} disabled={saving}>Xoá</button>
+              </article>
+            ))}
+          </div>
+        </section>
 
         <MedicalRecordList
           records={records}

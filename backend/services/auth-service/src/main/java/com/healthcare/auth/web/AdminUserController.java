@@ -58,7 +58,8 @@ public class AdminUserController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String role,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String q) {
         resolveAdmin(request); // RBAC guard
 
         PageRequest pageRequest = PageRequest.of(
@@ -66,7 +67,7 @@ public class AdminUserController {
                 Math.min(Math.max(size, 1), 100),
                 Sort.by(Sort.Direction.DESC, "createdAt")
         );
-        Page<UserAccountEntity> result = userRepository.findAll(buildFilter(role, status), pageRequest);
+        Page<UserAccountEntity> result = userRepository.findAll(buildFilter(role, status, q), pageRequest);
         AdminUserPageDto body = new AdminUserPageDto(
                 result.getContent().stream().map(this::toDto).toList(),
                 result.getNumber(),
@@ -170,7 +171,7 @@ public class AdminUserController {
         }
     }
 
-    private Specification<UserAccountEntity> buildFilter(String rawRole, String rawStatus) {
+    private Specification<UserAccountEntity> buildFilter(String rawRole, String rawStatus, String rawQuery) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (rawRole != null && !rawRole.isBlank()) {
@@ -188,6 +189,14 @@ public class AdminUserController {
                 } catch (IllegalArgumentException ignored) {
                     // ignore invalid status filter
                 }
+            }
+            if (rawQuery != null && !rawQuery.isBlank()) {
+                String like = "%" + rawQuery.trim().toLowerCase() + "%";
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("email")), like),
+                        cb.like(cb.lower(root.get("fullName")), like),
+                        cb.like(cb.lower(root.get("phone")), like)
+                ));
             }
             return cb.and(predicates.toArray(Predicate[]::new));
         };

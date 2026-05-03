@@ -9,10 +9,13 @@ import com.healthcare.user.service.UserProfileService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -42,6 +45,14 @@ public class UserProfileController {
         UUID userId = extractUserId(request);
         UserProfileResponse updated = userProfileService.updateProfile(userId, body);
         return apiResponseFactory.success("Profile updated", updated);
+    }
+
+    @PostMapping(value = "/me/avatar", consumes = "multipart/form-data")
+    public ApiResponse<UserProfileResponse> uploadAvatar(HttpServletRequest request,
+                                                         @RequestPart("file") MultipartFile file) {
+        UUID userId = extractUserId(request);
+        UserProfileResponse updated = userProfileService.updateAvatar(userId, file);
+        return apiResponseFactory.success("Avatar uploaded", updated);
     }
 
     private UUID extractUserId(HttpServletRequest request) {

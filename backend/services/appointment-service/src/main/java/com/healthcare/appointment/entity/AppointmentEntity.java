@@ -50,6 +50,12 @@ public class AppointmentEntity {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
+    @Column(name = "reminder_24h_sent_at")
+    private OffsetDateTime reminder24hSentAt;
+
+    @Column(name = "reminder_1h_sent_at")
+    private OffsetDateTime reminder1hSentAt;
+
     @PrePersist
     void prePersist() {
         OffsetDateTime now = OffsetDateTime.now();
@@ -158,5 +164,21 @@ public class AppointmentEntity {
 
     public void setUpdatedAt(OffsetDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public OffsetDateTime getReminder24hSentAt() {
+        return reminder24hSentAt;
+    }
+
+    public void setReminder24hSentAt(OffsetDateTime reminder24hSentAt) {
+        this.reminder24hSentAt = reminder24hSentAt;
+    }
+
+    public OffsetDateTime getReminder1hSentAt() {
+        return reminder1hSentAt;
+    }
+
+    public void setReminder1hSentAt(OffsetDateTime reminder1hSentAt) {
+        this.reminder1hSentAt = reminder1hSentAt;
     }
 }
