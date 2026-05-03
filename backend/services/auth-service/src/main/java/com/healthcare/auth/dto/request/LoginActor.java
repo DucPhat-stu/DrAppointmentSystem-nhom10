@@ -4,7 +4,8 @@ import com.healthcare.shared.security.Role;
 
 public enum LoginActor {
     PATIENT(Role.PATIENT),
-    DOCTOR(Role.DOCTOR);
+    DOCTOR(Role.DOCTOR),
+    ADMIN(Role.ADMIN);
 
     private final Role role;
 
