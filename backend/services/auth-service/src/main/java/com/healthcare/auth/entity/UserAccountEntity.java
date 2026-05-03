@@ -49,6 +49,27 @@ public class UserAccountEntity {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
+    @Column(name = "password_reset_token")
+    private String passwordResetToken;
+
+    @Column(name = "password_reset_expires_at")
+    private OffsetDateTime passwordResetExpiresAt;
+
+    @Column(name = "phone_otp", length = 6)
+    private String phoneOtp;
+
+    @Column(name = "phone_otp_expires_at")
+    private OffsetDateTime phoneOtpExpiresAt;
+
+    @Column(name = "two_factor_secret", length = 64)
+    private String twoFactorSecret;
+
+    @Column(name = "two_factor_enabled", nullable = false)
+    private boolean twoFactorEnabled = false;
+
+    @Column(name = "doctor_code", length = 32)
+    private String doctorCode;
+
     public UUID getId() {
         return id;
     }
@@ -131,5 +152,61 @@ public class UserAccountEntity {
 
     public void setUpdatedAt(OffsetDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getPasswordResetToken() {
+        return passwordResetToken;
+    }
+
+    public void setPasswordResetToken(String passwordResetToken) {
+        this.passwordResetToken = passwordResetToken;
+    }
+
+    public OffsetDateTime getPasswordResetExpiresAt() {
+        return passwordResetExpiresAt;
+    }
+
+    public void setPasswordResetExpiresAt(OffsetDateTime passwordResetExpiresAt) {
+        this.passwordResetExpiresAt = passwordResetExpiresAt;
+    }
+
+    public String getPhoneOtp() {
+        return phoneOtp;
+    }
+
+    public void setPhoneOtp(String phoneOtp) {
+        this.phoneOtp = phoneOtp;
+    }
+
+    public OffsetDateTime getPhoneOtpExpiresAt() {
+        return phoneOtpExpiresAt;
+    }
+
+    public void setPhoneOtpExpiresAt(OffsetDateTime phoneOtpExpiresAt) {
+        this.phoneOtpExpiresAt = phoneOtpExpiresAt;
+    }
+
+    public String getTwoFactorSecret() {
+        return twoFactorSecret;
+    }
+
+    public void setTwoFactorSecret(String twoFactorSecret) {
+        this.twoFactorSecret = twoFactorSecret;
+    }
+
+    public boolean isTwoFactorEnabled() {
+        return twoFactorEnabled;
+    }
+
+    public void setTwoFactorEnabled(boolean twoFactorEnabled) {
+        this.twoFactorEnabled = twoFactorEnabled;
+    }
+
+    public String getDoctorCode() {
+        return doctorCode;
+    }
+
+    public void setDoctorCode(String doctorCode) {
+        this.doctorCode = doctorCode;
     }
 }
