@@ -49,20 +49,50 @@ public class UserProfileService {
 
     @Transactional
     public UserProfileResponse updateAvatar(UUID userId, MultipartFile file) {
+        // Validate file not empty
         if (file == null || file.isEmpty()) {
             throw new ApiException(ErrorCode.VALIDATION_ERROR, "Avatar file is required");
         }
+
+        // Validate file size (max 2MB)
+        long maxSize = 2L * 1024 * 1024;
+        if (file.getSize() > maxSize) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Avatar file size must not exceed 2MB");
+        }
+
+        // Validate MIME type (must be image/*)
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Avatar must be an image file (image/*)");
+        }
+
+        // Validate file extension whitelist
+        String originalName = file.getOriginalFilename();
+        if (originalName == null || originalName.trim().isEmpty()) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Avatar file name is required");
+        }
+
+        String[] allowedExtensions = {".jpg", ".jpeg", ".png", ".webp", ".gif"};
+        String extension = "";
+        int dot = originalName.lastIndexOf('.');
+        if (dot >= 0) {
+            extension = originalName.substring(dot).toLowerCase();
+        }
+
+        String finalExtension = extension;
+        boolean isValidExtension = java.util.Arrays.stream(allowedExtensions)
+                .anyMatch(ext -> ext.equals(finalExtension));
+
+        if (!isValidExtension) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Avatar file extension must be one of: jpg, jpeg, png, webp, gif");
+        }
+
         UserProfileEntity entity = userProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ApiException(
                         ErrorCode.RESOURCE_NOT_FOUND,
                         "Profile not found for user: " + userId));
 
-        String originalName = file.getOriginalFilename() == null ? "avatar" : file.getOriginalFilename();
-        String extension = "";
-        int dot = originalName.lastIndexOf('.');
-        if (dot >= 0) {
-            extension = originalName.substring(dot).replaceAll("[^A-Za-z0-9.]", "");
-        }
+        // Server-generated filename (never trust original filename)
         String fileName = userId + "-" + System.currentTimeMillis() + extension;
         Path uploadDir = Path.of("uploads", "avatars").toAbsolutePath().normalize();
         Path target = uploadDir.resolve(fileName).normalize();
