@@ -43,6 +43,10 @@ public class AppointmentEventConsumer {
             }
             case "APPOINTMENT_COMPLETED" ->
                     notifyPatient(event, "Appointment completed", "Your appointment has been marked as completed.");
+            case "APPOINTMENT_REMINDER_24H" ->
+                    notifyPatient(event, "Appointment reminder", "Your confirmed appointment is scheduled in about 24 hours.");
+            case "APPOINTMENT_REMINDER_1H" ->
+                    notifyPatient(event, "Appointment reminder", "Your confirmed appointment starts in about 1 hour.");
             default -> {
                 // Unknown event types are intentionally ignored to keep consumers forward compatible.
             }
@@ -62,7 +66,9 @@ public class AppointmentEventConsumer {
             String event,
             UUID appointmentId,
             UUID doctorId,
-            UUID patientId
+            UUID patientId,
+            String scheduledStart,
+            String scheduledEnd
     ) {
     }
 }

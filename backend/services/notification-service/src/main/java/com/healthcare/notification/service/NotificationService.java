@@ -18,9 +18,12 @@ import java.util.UUID;
 @Service
 public class NotificationService {
     private final NotificationJpaRepository notificationRepository;
+    private final NotificationPreferenceService preferenceService;
 
-    public NotificationService(NotificationJpaRepository notificationRepository) {
+    public NotificationService(NotificationJpaRepository notificationRepository,
+                               NotificationPreferenceService preferenceService) {
         this.notificationRepository = notificationRepository;
+        this.preferenceService = preferenceService;
     }
 
     @Transactional(readOnly = true)
@@ -65,6 +68,9 @@ public class NotificationService {
                        String type,
                        String title,
                        String content) {
+        if (!preferenceService.allows(recipientId, eventName)) {
+            return;
+        }
         if (eventId != null && notificationRepository.existsByEventIdAndRecipientId(eventId, recipientId)) {
             return;
         }
@@ -86,6 +92,16 @@ public class NotificationService {
         } catch (DataIntegrityViolationException ignored) {
             // Rabbit redelivery can race with an already persisted event; the unique index keeps it idempotent.
         }
+    }
+
+    @Transactional
+    public int broadcast(List<UUID> recipientIds, UUID eventId, String type, String title, String content) {
+        int created = 0;
+        for (UUID recipientId : recipientIds) {
+            create(recipientId, null, eventId, "BROADCAST", type, title, content);
+            created++;
+        }
+        return created;
     }
 
     private NotificationResponse toResponse(NotificationEntity entity) {

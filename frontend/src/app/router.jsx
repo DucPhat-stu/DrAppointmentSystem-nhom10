@@ -25,6 +25,7 @@ import AdminDashboardPage from '../pages/Admin/AdminDashboardPage.jsx';
 import AdminUsersPage from '../pages/Admin/AdminUsersPage.jsx';
 import AdminDoctorsPage from '../pages/Admin/AdminDoctorsPage.jsx';
 import AdminAppointmentsPage from '../pages/Admin/AdminAppointmentsPage.jsx';
+import AdminNotificationsPage from '../pages/Admin/AdminNotificationsPage.jsx';
 import RouteFallbackPage from '../pages/RouteFallbackPage.jsx';
 
 function ProtectedLayout() {
@@ -91,6 +92,7 @@ export const router = createBrowserRouter([
       { path: 'appointments',           element: <AdminAppointmentsPage /> },
       { path: 'leaves',                 element: <AdminLeavePage /> },
       { path: 'prompts',                element: <AdminPromptPage /> },
+      { path: 'notifications',          element: <AdminNotificationsPage /> },
     ],
   },
 

@@ -1,9 +1,12 @@
 package com.healthcare.notification.web;
 
 import com.healthcare.notification.dto.MarkNotificationsReadRequest;
+import com.healthcare.notification.dto.NotificationPreferenceRequest;
+import com.healthcare.notification.dto.NotificationPreferenceResponse;
 import com.healthcare.notification.dto.NotificationPageResponse;
 import com.healthcare.notification.dto.NotificationResponse;
 import com.healthcare.notification.security.CurrentUserResolver;
+import com.healthcare.notification.service.NotificationPreferenceService;
 import com.healthcare.notification.service.NotificationService;
 import com.healthcare.shared.api.ApiResponse;
 import com.healthcare.shared.common.web.ApiResponseFactory;
@@ -25,13 +28,16 @@ import java.util.UUID;
 public class NotificationController {
     private final CurrentUserResolver currentUserResolver;
     private final NotificationService notificationService;
+    private final NotificationPreferenceService preferenceService;
     private final ApiResponseFactory apiResponseFactory;
 
     public NotificationController(CurrentUserResolver currentUserResolver,
                                   NotificationService notificationService,
+                                  NotificationPreferenceService preferenceService,
                                   ApiResponseFactory apiResponseFactory) {
         this.currentUserResolver = currentUserResolver;
         this.notificationService = notificationService;
+        this.preferenceService = preferenceService;
         this.apiResponseFactory = apiResponseFactory;
     }
 
@@ -54,5 +60,18 @@ public class NotificationController {
                                                           @Valid @RequestBody MarkNotificationsReadRequest body) {
         AuthenticatedUser user = currentUserResolver.resolve(request);
         return apiResponseFactory.success("Notifications marked read", notificationService.markRead(user.userId(), body.ids()));
+    }
+
+    @GetMapping("/preferences")
+    public ApiResponse<NotificationPreferenceResponse> getPreferences(HttpServletRequest request) {
+        AuthenticatedUser user = currentUserResolver.resolve(request);
+        return apiResponseFactory.success("Notification preferences loaded", preferenceService.get(user.userId()));
+    }
+
+    @PatchMapping("/preferences")
+    public ApiResponse<NotificationPreferenceResponse> updatePreferences(HttpServletRequest request,
+                                                                         @RequestBody NotificationPreferenceRequest body) {
+        AuthenticatedUser user = currentUserResolver.resolve(request);
+        return apiResponseFactory.success("Notification preferences updated", preferenceService.update(user.userId(), body));
     }
 }

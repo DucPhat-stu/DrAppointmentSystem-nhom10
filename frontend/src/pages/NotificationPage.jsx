@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
-import { fetchNotifications, markNotificationRead, markNotificationsRead } from '../services/notificationService.js';
+import {
+  fetchNotificationPreferences,
+  fetchNotifications,
+  markNotificationRead,
+  markNotificationsRead,
+  updateNotificationPreferences,
+} from '../services/notificationService.js';
 import styles from './Phase3Pages.module.css';
 
 function appointmentPathForRole(role, appointmentId) {
@@ -27,6 +33,7 @@ export default function NotificationPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [preferences, setPreferences] = useState(null);
 
   const loadNotifications = useCallback(async () => {
     setLoading(true);
@@ -47,6 +54,31 @@ export default function NotificationPage() {
   useEffect(() => {
     loadNotifications();
   }, [loadNotifications]);
+
+  useEffect(() => {
+    async function loadPreferences() {
+      try {
+        const response = await fetchNotificationPreferences();
+        setPreferences(response.data);
+      } catch {
+        setPreferences(null);
+      }
+    }
+    loadPreferences();
+  }, []);
+
+  async function togglePreference(key) {
+    if (!preferences) return;
+    const next = { ...preferences, [key]: !preferences[key] };
+    setPreferences(next);
+    try {
+      const response = await updateNotificationPreferences({ [key]: next[key] });
+      setPreferences(response.data);
+    } catch (err) {
+      setError(err.message ?? 'Unable to update preferences');
+      setPreferences(preferences);
+    }
+  }
 
   async function markOne(notificationId) {
     setSaving(true);
@@ -95,6 +127,34 @@ export default function NotificationPage() {
       </div>
 
       {error && <div className={styles.alert}>{error}</div>}
+
+      <section className={styles.panel}>
+        <div className={styles.panelHeader}>
+          <h2>Preferences</h2>
+          <span>Reminder channels</span>
+        </div>
+        {preferences && (
+          <div className={styles.actions}>
+            {[
+              ['pushEnabled', 'Push'],
+              ['emailEnabled', 'Email'],
+              ['smsEnabled', 'SMS'],
+              ['reminder24h', '24h reminders'],
+              ['reminder1h', '1h reminders'],
+              ['appointmentUpdates', 'Appointment updates'],
+            ].map(([key, label]) => (
+              <button
+                key={key}
+                className={preferences[key] ? styles.primaryButton : styles.secondaryButton}
+                type="button"
+                onClick={() => togglePreference(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
 
       <section className={styles.panel}>
         <div className={styles.panelHeader}>
