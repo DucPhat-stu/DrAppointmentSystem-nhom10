@@ -57,4 +57,33 @@ export const chatService = {
     });
     return response.data;
   },
+
+  async suggestFollowUp(diagnosis) {
+    const response = await aiApi('/api/v1/ai/follow-up-suggestion', {
+      method: 'POST',
+      body: JSON.stringify({ diagnosis }),
+    });
+    return response.data;
+  },
+
+  async predictWaitTime({ department = 'General Medicine', doctorId = '' } = {}) {
+    const response = await aiApi('/api/v1/ai/wait-time', {
+      method: 'POST',
+      body: JSON.stringify({ department, doctorId }),
+    });
+    return response.data;
+  },
+
+  async fetchDiseaseTrends() {
+    const response = await aiApi('/api/v1/ai/analytics/disease-trends');
+    return response.data ?? [];
+  },
+
+  async healthRiskAlerts({ symptoms, age = null }) {
+    const response = await aiApi('/api/v1/ai/risk-alerts', {
+      method: 'POST',
+      body: JSON.stringify({ symptoms, age }),
+    });
+    return response.data;
+  },
 };

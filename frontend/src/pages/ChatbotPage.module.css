@@ -104,6 +104,16 @@
   gap: 8px;
 }
 
+.wideToolCard {
+  grid-column: span 3;
+}
+
+.trendGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .messages {
   display: flex;
   min-height: 0;
@@ -337,8 +347,13 @@
 
   .inputBar,
   .toolPanel,
+  .trendGrid,
   .structuredGrid {
     grid-template-columns: 1fr;
+  }
+
+  .wideToolCard {
+    grid-column: auto;
   }
 
   .inputBar > button {

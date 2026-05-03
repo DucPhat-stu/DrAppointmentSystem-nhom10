@@ -4,7 +4,11 @@ import com.healthcare.ai.dto.AIConversationResponse;
 import com.healthcare.ai.dto.AIFeedbackRequest;
 import com.healthcare.ai.dto.AIMessageResponse;
 import com.healthcare.ai.dto.DoctorRecommendationResponse;
+import com.healthcare.ai.dto.DiseaseTrendResponse;
+import com.healthcare.ai.dto.FollowUpSuggestionResponse;
+import com.healthcare.ai.dto.HealthRiskAlertResponse;
 import com.healthcare.ai.dto.ImageAnalysisResponse;
+import com.healthcare.ai.dto.WaitTimePredictionResponse;
 import com.healthcare.ai.entity.AIConversationEntity;
 import com.healthcare.ai.entity.AIFeedbackEntity;
 import com.healthcare.ai.entity.AIMessageEntity;
@@ -99,6 +103,54 @@ public class AIEnhancementService {
                 "No critical abnormality detected in mock analysis.",
                 "Ask a clinician to review the original image before making care decisions.",
                 0.74
+        );
+    }
+
+    public FollowUpSuggestionResponse suggestFollowUp(String diagnosis) {
+        String lower = diagnosis.toLowerCase();
+        if (lower.contains("sot") || lower.contains("fever") || lower.contains("nhiem")) {
+            return new FollowUpSuggestionResponse("24-48 hours", "Recheck soon if fever or infection symptoms persist.");
+        }
+        if (lower.contains("man") || lower.contains("chronic")) {
+            return new FollowUpSuggestionResponse("2-4 weeks", "Chronic conditions usually need planned follow-up after treatment adjustment.");
+        }
+        return new FollowUpSuggestionResponse("5-7 days", "Default demo suggestion for symptom reassessment.");
+    }
+
+    public WaitTimePredictionResponse predictWaitTime(String department) {
+        String normalized = department == null ? "" : department.toLowerCase();
+        int minutes = normalized.contains("emergency") || normalized.contains("cap cuu") ? 18 : 32;
+        return new WaitTimePredictionResponse(minutes, "medium", "Mock estimate based on department load and current demo queue.");
+    }
+
+    public List<DiseaseTrendResponse> diseaseTrends() {
+        return List.of(
+                new DiseaseTrendResponse("Seasonal flu", "up", 42, "Respiratory symptoms increased in the last 7 days."),
+                new DiseaseTrendResponse("Dengue fever", "stable", 13, "Case count is stable but should be monitored."),
+                new DiseaseTrendResponse("Gastroenteritis", "down", 9, "Reported digestive symptoms are decreasing.")
+        );
+    }
+
+    public HealthRiskAlertResponse healthRisk(String symptoms, Integer age) {
+        String lower = symptoms.toLowerCase();
+        if (lower.contains("kho tho") || lower.contains("dau nguc") || lower.contains("chest") || lower.contains("breath")) {
+            return new HealthRiskAlertResponse(
+                    "HIGH",
+                    List.of("Possible emergency symptom detected.", "Do not delay clinical evaluation."),
+                    "Go to emergency care or call local emergency support."
+            );
+        }
+        if (age != null && age >= 65) {
+            return new HealthRiskAlertResponse(
+                    "MEDIUM",
+                    List.of("Older patient risk modifier applied."),
+                    "Book an appointment within 24-48 hours if symptoms persist."
+            );
+        }
+        return new HealthRiskAlertResponse(
+                "LOW",
+                List.of("No critical keyword detected in mock screening."),
+                "Monitor symptoms and schedule a visit if they worsen."
         );
     }
 

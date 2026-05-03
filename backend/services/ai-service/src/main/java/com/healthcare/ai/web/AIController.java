@@ -5,8 +5,15 @@ import com.healthcare.ai.dto.AIConversationResponse;
 import com.healthcare.ai.dto.AIFeedbackRequest;
 import com.healthcare.ai.dto.DoctorRecommendationRequest;
 import com.healthcare.ai.dto.DoctorRecommendationResponse;
+import com.healthcare.ai.dto.DiseaseTrendResponse;
+import com.healthcare.ai.dto.FollowUpSuggestionRequest;
+import com.healthcare.ai.dto.FollowUpSuggestionResponse;
+import com.healthcare.ai.dto.HealthRiskAlertRequest;
+import com.healthcare.ai.dto.HealthRiskAlertResponse;
 import com.healthcare.ai.dto.ImageAnalysisResponse;
 import com.healthcare.ai.dto.StructuredAICheckRequest;
+import com.healthcare.ai.dto.WaitTimePredictionRequest;
+import com.healthcare.ai.dto.WaitTimePredictionResponse;
 import com.healthcare.ai.service.AIEnhancementService;
 import com.healthcare.ai.service.AIConversationService;
 import com.healthcare.shared.api.ApiResponse;
@@ -80,6 +87,26 @@ public class AIController {
     @PostMapping(value = "/image-analysis", consumes = "multipart/form-data")
     public ApiResponse<ImageAnalysisResponse> analyzeImage(@RequestPart("file") MultipartFile file) {
         return apiResponseFactory.success("Medical image mock analysis completed", enhancementService.analyzeImage(file));
+    }
+
+    @PostMapping("/follow-up-suggestion")
+    public ApiResponse<FollowUpSuggestionResponse> suggestFollowUp(@Valid @RequestBody FollowUpSuggestionRequest request) {
+        return apiResponseFactory.success("Follow-up suggestion generated", enhancementService.suggestFollowUp(request.diagnosis()));
+    }
+
+    @PostMapping("/wait-time")
+    public ApiResponse<WaitTimePredictionResponse> predictWaitTime(@RequestBody WaitTimePredictionRequest request) {
+        return apiResponseFactory.success("Wait time prediction generated", enhancementService.predictWaitTime(request.department()));
+    }
+
+    @GetMapping("/analytics/disease-trends")
+    public ApiResponse<List<DiseaseTrendResponse>> diseaseTrends() {
+        return apiResponseFactory.success("Disease trends loaded", enhancementService.diseaseTrends());
+    }
+
+    @PostMapping("/risk-alerts")
+    public ApiResponse<HealthRiskAlertResponse> healthRisk(@Valid @RequestBody HealthRiskAlertRequest request) {
+        return apiResponseFactory.success("Health risk alerts generated", enhancementService.healthRisk(request.symptoms(), request.age()));
     }
 
     @PostMapping("/preview/structured")

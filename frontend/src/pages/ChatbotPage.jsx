@@ -32,6 +32,10 @@ export default function ChatbotPage() {
   const [history, setHistory] = useState([]);
   const [doctorRecommendations, setDoctorRecommendations] = useState([]);
   const [imageResult, setImageResult] = useState(null);
+  const [followUp, setFollowUp] = useState(null);
+  const [waitTime, setWaitTime] = useState(null);
+  const [trends, setTrends] = useState([]);
+  const [riskAlert, setRiskAlert] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [timeoutWarning, setTimeoutWarning] = useState(false);
@@ -239,6 +243,50 @@ export default function ChatbotPage() {
     }
   };
 
+  const currentSymptomText = () => (mode === 'text' ? inputText : symptoms).trim();
+
+  const handleFollowUp = async () => {
+    const source = currentSymptomText() || 'general symptoms';
+    try {
+      setFollowUp(await chatService.suggestFollowUp(source));
+      setError(null);
+    } catch (requestError) {
+      setError(errorMessage(requestError));
+    }
+  };
+
+  const handleWaitTime = async () => {
+    try {
+      setWaitTime(await chatService.predictWaitTime({ department: 'General Medicine' }));
+      setError(null);
+    } catch (requestError) {
+      setError(errorMessage(requestError));
+    }
+  };
+
+  const handleTrends = async () => {
+    try {
+      setTrends(await chatService.fetchDiseaseTrends());
+      setError(null);
+    } catch (requestError) {
+      setError(errorMessage(requestError));
+    }
+  };
+
+  const handleRisk = async () => {
+    const source = currentSymptomText();
+    if (!source) {
+      setError('Nhap trieu chung truoc khi tao canh bao rui ro.');
+      return;
+    }
+    try {
+      setRiskAlert(await chatService.healthRiskAlerts({ symptoms: source }));
+      setError(null);
+    } catch (requestError) {
+      setError(errorMessage(requestError));
+    }
+  };
+
   return (
     <main className={styles.page}>
       <section className={styles.header}>
@@ -280,6 +328,34 @@ export default function ChatbotPage() {
             <input type="file" accept="image/*" onChange={handleImageAnalysis} />
           </label>
           {imageResult && <p>{imageResult.finding} Confidence {Math.round(imageResult.confidence * 100)}%</p>}
+        </article>
+
+        <article className={styles.toolCard}>
+          <h2>Tai kham</h2>
+          <button type="button" onClick={handleFollowUp}>Goi y lich tai kham</button>
+          {followUp && <p>{followUp.recommendedWindow}: {followUp.reason}</p>}
+        </article>
+
+        <article className={styles.toolCard}>
+          <h2>Thoi gian cho</h2>
+          <button type="button" onClick={handleWaitTime}>Du doan</button>
+          {waitTime && <p>{waitTime.estimatedMinutes} phut - {waitTime.confidence}</p>}
+        </article>
+
+        <article className={styles.toolCard}>
+          <h2>Canh bao rui ro</h2>
+          <button type="button" onClick={handleRisk}>Quet rui ro</button>
+          {riskAlert && <p>{riskAlert.level}: {riskAlert.nextStep}</p>}
+        </article>
+
+        <article className={`${styles.toolCard} ${styles.wideToolCard}`}>
+          <h2>Xu huong benh</h2>
+          <button type="button" onClick={handleTrends}>Tai dashboard xu huong</button>
+          <div className={styles.trendGrid}>
+            {trends.map((trend) => (
+              <p key={trend.disease}>{trend.disease}: {trend.trend} ({trend.cases})</p>
+            ))}
+          </div>
         </article>
       </section>
 
