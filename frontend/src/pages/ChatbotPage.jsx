@@ -29,6 +29,9 @@ export default function ChatbotPage() {
   const [duration, setDuration] = useState('');
   const [description, setDescription] = useState('');
   const [promptPreview, setPromptPreview] = useState('');
+  const [history, setHistory] = useState([]);
+  const [doctorRecommendations, setDoctorRecommendations] = useState([]);
+  const [imageResult, setImageResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [timeoutWarning, setTimeoutWarning] = useState(false);
@@ -39,6 +42,12 @@ export default function ChatbotPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages, loading]);
+
+  useEffect(() => {
+    chatService.fetchHistory()
+      .then(setHistory)
+      .catch(() => setHistory([]));
+  }, []);
 
   const errorMessage = (requestError) => {
     if (requestError instanceof ApiError) {
@@ -90,6 +99,7 @@ export default function ChatbotPage() {
     try {
       const result = await chatService.checkSymptoms(normalized);
       setMessages((current) => [...current, createMessage('assistant', result)]);
+      chatService.fetchHistory().then(setHistory).catch(() => {});
     } catch (requestError) {
       setRetryText(normalized);
       setError(errorMessage(requestError));
@@ -127,6 +137,7 @@ export default function ChatbotPage() {
     try {
       const result = await chatService.checkStructuredSymptoms(payload);
       setMessages((current) => [...current, createMessage('assistant', result)]);
+      chatService.fetchHistory().then(setHistory).catch(() => {});
       setSymptoms('');
       setDuration('');
       setDescription('');
@@ -182,6 +193,52 @@ export default function ChatbotPage() {
     }
   };
 
+  const handleFeedback = async (rating) => {
+    const latestAssistant = history
+      .flatMap((conversation) => conversation.messages ?? [])
+      .filter((message) => message.role === 'ASSISTANT')
+      .at(-1);
+    if (!latestAssistant?.id) {
+      setError('Chua co cau tra loi AI nao trong lich su de danh gia.');
+      return;
+    }
+    try {
+      await chatService.sendFeedback({ messageId: latestAssistant.id, rating });
+      setError(null);
+    } catch (requestError) {
+      setError(errorMessage(requestError));
+    }
+  };
+
+  const handleDoctorRecommendation = async () => {
+    const source = mode === 'text' ? inputText : symptoms;
+    if (!source.trim()) {
+      setError('Nhap trieu chung truoc khi goi y bac si.');
+      return;
+    }
+    try {
+      const result = await chatService.recommendDoctors(source.trim());
+      setDoctorRecommendations(result);
+      setError(null);
+    } catch (requestError) {
+      setError(errorMessage(requestError));
+    }
+  };
+
+  const handleImageAnalysis = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const result = await chatService.analyzeImage(file);
+      setImageResult(result);
+      setError(null);
+    } catch (requestError) {
+      setError(errorMessage(requestError));
+    } finally {
+      event.target.value = '';
+    }
+  };
+
   return (
     <main className={styles.page}>
       <section className={styles.header}>
@@ -192,6 +249,38 @@ export default function ChatbotPage() {
             Ket qua chi mang tinh tham khao va khong thay the chan doan y khoa.
           </p>
         </div>
+      </section>
+
+      <section className={styles.toolPanel}>
+        <article className={styles.toolCard}>
+          <h2>Lich su hoi thoai</h2>
+          <ul className={styles.historyList}>
+            {history.length === 0 ? <li>Chua co lich su.</li> : history.map((conversation) => (
+              <li key={conversation.id}>{conversation.title}</li>
+            ))}
+          </ul>
+          <div className={styles.feedbackRow}>
+            <button type="button" onClick={() => handleFeedback(5)}>Huu ich</button>
+            <button type="button" onClick={() => handleFeedback(1)}>Chua dung</button>
+          </div>
+        </article>
+
+        <article className={styles.toolCard}>
+          <h2>Goi y bac si</h2>
+          <button type="button" onClick={handleDoctorRecommendation}>Tim bac si phu hop</button>
+          {doctorRecommendations.map((doctor) => (
+            <p key={`${doctor.doctorName}-${doctor.specialty}`}>{doctor.doctorName} - {doctor.specialty} ({Math.round(doctor.matchScore * 100)}%)</p>
+          ))}
+        </article>
+
+        <article className={styles.toolCard}>
+          <h2>Phan tich hinh anh</h2>
+          <label>
+            Upload image
+            <input type="file" accept="image/*" onChange={handleImageAnalysis} />
+          </label>
+          {imageResult && <p>{imageResult.finding} Confidence {Math.round(imageResult.confidence * 100)}%</p>}
+        </article>
       </section>
 
       <section className={styles.chatPanel} aria-label="AI chatbot">

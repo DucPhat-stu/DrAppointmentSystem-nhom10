@@ -43,7 +43,7 @@ public class AIConversationService {
     public String checkSymptoms(String text) {
         String prompt = promptBuilder.buildTextPrompt(text);
         String rawResponse = aiClient.generate(prompt);
-        return formatter.format(parseOrLocalFallback(rawResponse, text));
+        return enhance(formatter.format(parseOrLocalFallback(rawResponse, text)));
     }
 
     public String checkStructuredSymptoms(StructuredAICheckRequest request) {
@@ -52,7 +52,7 @@ public class AIConversationService {
                 : dynamicPromptBuilder.build(request);
         String rawResponse = aiClient.generate(prompt);
         String sourceText = "%s %s".formatted(request.symptoms(), request.description() == null ? "" : request.description());
-        return formatter.format(parseOrLocalFallback(rawResponse, sourceText));
+        return enhance(formatter.format(parseOrLocalFallback(rawResponse, sourceText)));
     }
 
     public String previewStructuredPrompt(StructuredAICheckRequest request) {
@@ -74,5 +74,17 @@ public class AIConversationService {
         return response == null
                 || response.possibleConditions().contains("Khong xac dinh")
                 || response.symptomsDetected().contains("Khong the phan tich");
+    }
+
+    private String enhance(String formatted) {
+        return formatted + """
+
+
+                Chan doan so bo: Can doi chieu voi kham lam sang va dau hieu sinh ton.
+
+                Goi y phac do: Nghi ngoi, bu nuoc, theo doi trieu chung; kham bac si neu dau hieu nang len.
+
+                Canh bao rui ro: Di cap cuu neu kho tho, dau nguc, sot cao keo dai, ngat, hoac dau du doi.
+                """;
     }
 }

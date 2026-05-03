@@ -27,4 +27,34 @@ export const chatService = {
 
     return response.data;
   },
+
+  async fetchHistory() {
+    const response = await aiApi('/api/v1/ai/conversations');
+    return response.data ?? [];
+  },
+
+  async sendFeedback({ messageId, rating, comment = '' }) {
+    return aiApi('/api/v1/ai/feedback', {
+      method: 'POST',
+      body: JSON.stringify({ messageId, rating, comment }),
+    });
+  },
+
+  async recommendDoctors(symptoms) {
+    const response = await aiApi('/api/v1/ai/doctor-recommendations', {
+      method: 'POST',
+      body: JSON.stringify({ symptoms }),
+    });
+    return response.data ?? [];
+  },
+
+  async analyzeImage(file) {
+    const body = new FormData();
+    body.append('file', file);
+    const response = await aiApi('/api/v1/ai/image-analysis', {
+      method: 'POST',
+      body,
+    });
+    return response.data;
+  },
 };

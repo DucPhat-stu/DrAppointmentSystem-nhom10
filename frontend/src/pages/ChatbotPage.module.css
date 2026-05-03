@@ -43,6 +43,67 @@
   background: var(--color-bg-glass-strong);
 }
 
+.toolPanel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.toolCard {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.toolCard h2 {
+  margin: 0;
+  font-size: var(--font-size-base);
+}
+
+.toolCard p,
+.toolCard li {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.45;
+}
+
+.toolCard button,
+.toolCard label {
+  width: fit-content;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(59, 130, 246, 0.16);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+
+.toolCard input[type='file'] {
+  display: none;
+}
+
+.historyList {
+  display: grid;
+  gap: 8px;
+  max-height: 170px;
+  overflow: auto;
+  padding: 0;
+  list-style: none;
+}
+
+.feedbackRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .messages {
   display: flex;
   min-height: 0;
@@ -275,6 +336,7 @@
   }
 
   .inputBar,
+  .toolPanel,
   .structuredGrid {
     grid-template-columns: 1fr;
   }
