@@ -238,18 +238,73 @@ Override port hoặc database khi cần:
 
 ```text
 backend/services/auth-service/src/main/resources/db/migration/V3__seed_mvp_users.sql
+backend/services/auth-service/src/main/resources/db/migration/V4__seed_admin_user.sql
 ```
 
 Tài khoản local:
 
-- Patient: `patient01@healthcare.local / Patient@123`
-- Doctor: `doctor01@healthcare.local / Doctor@123`
+| Role | Email | Password | Actor |
+|------|-------|----------|-------|
+| Patient | `patient01@healthcare.local` | `Patient@123` | `PATIENT` |
+| Doctor  | `doctor01@healthcare.local`  | `Doctor@123`  | `DOCTOR` |
+| Admin   | `admin01@healthcare.local`   | `Admin@123`   | `ADMIN` |
+
+## Task 5 — Admin Management
+
+Admin Management được tích hợp vào các service hiện có (không có admin-service riêng):
+
+### Admin Endpoints
+
+| Service | Method | Path | Mô tả |
+|---------|--------|------|-------|
+| auth-service `:8086` | GET  | `/api/v1/admin/users` | Danh sách user (filter role/status, paginated) |
+| auth-service `:8086` | PUT  | `/api/v1/admin/users/{id}/disable` | Vô hiệu hoá user |
+| auth-service `:8086` | PUT  | `/api/v1/admin/users/{id}/enable` | Kích hoạt lại user |
+| doctor-service `:8083` | GET | `/api/v1/admin/doctors` | Danh sách bác sĩ |
+| appointment-service `:8084` | GET | `/api/v1/admin/appointments` | Tất cả lịch hẹn (filter status, paginated) |
+| appointment-service `:8084` | PUT | `/api/v1/admin/appointments/{id}/cancel` | Force cancel lịch hẹn |
+
+> Tất cả `/api/v1/admin/**` yêu cầu JWT với `role=ADMIN`. Non-admin token nhận HTTP 403.
+
+### Admin Login
+
+```json
+POST /api/v1/auth/login
+{
+  "email": "admin01@healthcare.local",
+  "password": "Admin@123",
+  "actor": "ADMIN"
+}
+```
+
+### Admin UI
+
+Sau khi login với role ADMIN, truy cập admin console tại:
+
+- **Dashboard**: `http://localhost:5173/admin` — Analytics KPI, biểu đồ trạng thái lịch hẹn, health panel
+- **Users**: `http://localhost:5173/admin/users` — Quản lý người dùng
+- **Doctors**: `http://localhost:5173/admin/doctors` — Danh sách bác sĩ
+- **Appointments**: `http://localhost:5173/admin/appointments` — Quản lý lịch hẹn
+- **Leaves**: `http://localhost:5173/admin/leaves` — Duyệt nghỉ phép
+
+Admin UI dùng **light/white theme** (AdminShell) tách biệt với dark theme của Patient/Doctor portal.
+
+### Audit Log
+
+Admin actions (disable user, force cancel appointment) được ghi vào bảng `admin_audit_log`:
+- `auth_db.admin_audit_log` — track user disable/enable
+- `appointment_db.admin_audit_log` — track force cancel
 
 ## Postman
 
 Collection và environment local:
 
 - `postman/collections/00-auth.postman_collection.json`
+- `postman/collections/01-user.postman_collection.json`
+- `postman/collections/02-doctor.postman_collection.json`
+- `postman/collections/03-appointment.postman_collection.json`
+- `postman/collections/04-notification.postman_collection.json`
+- `postman/collections/05-admin.postman_collection.json` ← **Task 5 Admin API**
 - `postman/environments/healthcare-local.postman_environment.json`
 
 Postman environment nên có:
@@ -262,6 +317,7 @@ Postman environment nên có:
 - `baseUrlAI=http://localhost:8087`
 - `patientActor=PATIENT`
 - `doctorActor=DOCTOR`
+- `adminActor=ADMIN`
 
 ## Smoke Check
 

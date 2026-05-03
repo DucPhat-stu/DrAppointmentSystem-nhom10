@@ -1,3 +1,24 @@
+# ============================================================
+# run-service.ps1 — Healthcare Platform Backend Service Runner
+# ============================================================
+# Usage: .\run-service.ps1 <service-name> [-Clean] [-AppPort <port>]
+#
+# Services:
+#   auth-service         port 8086  — Auth + Admin User Management (/api/v1/admin/users)
+#   user-service         port 8082  — User Profiles
+#   doctor-service       port 8083  — Doctor schedules, leaves, + Admin Doctor endpoint
+#   appointment-service  port 8084  — Appointments + Admin Appointment Governance
+#   notification-service port 8085  — Notifications
+#   ai-service           port 8087  — AI Chat (optional)
+#
+# NOTE (Task 5 - Admin Management):
+#   There is NO separate admin-service. Admin endpoints are embedded in existing services:
+#     - auth-service:        GET/PUT /api/v1/admin/users/*
+#     - doctor-service:      GET     /api/v1/admin/doctors
+#     - appointment-service: GET/PUT /api/v1/admin/appointments/*
+#   Admin account: admin01@healthcare.local / Admin@123  (role=ADMIN, auth-service)
+#   All admin endpoints require a valid JWT with role=ADMIN (enforced at controller layer).
+# ============================================================
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, Position = 0)]

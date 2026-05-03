@@ -1,0 +1,259 @@
+{
+  "info": {
+    "name": "05 - Admin Management",
+    "_postman_id": "admin-mgmt-collection-v1",
+    "description": "Admin Management API — Task 5. All endpoints require Bearer token from Admin Auth login.\n\nAdmin account: admin01@healthcare.local / Admin@123\nActor: ADMIN\n\nServices:\n- auth-service (8086): /api/v1/admin/users/**\n- doctor-service (8083): /api/v1/admin/doctors\n- appointment-service (8084): /api/v1/admin/appointments/**",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "admin_token", "value": "", "type": "string" },
+    { "key": "target_user_id", "value": "", "type": "string" },
+    { "key": "target_appointment_id", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Admin Auth",
+      "item": [
+        {
+          "name": "Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.data && json.data.accessToken) {",
+                  "  pm.collectionVariables.set('admin_token', json.data.accessToken);",
+                  "  pm.test('Admin login successful', () => pm.response.to.have.status(200));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin01@healthcare.local\",\n  \"password\": \"Admin@123\",\n  \"actor\": \"ADMIN\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8086/api/v1/auth/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8086",
+              "path": ["api", "v1", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Management (auth-service :8086)",
+      "item": [
+        {
+          "name": "List All Users",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "http://localhost:8086/api/v1/admin/users?page=0&size=20",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8086",
+              "path": ["api", "v1", "admin", "users"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" },
+                { "key": "role", "value": "", "disabled": true },
+                { "key": "status", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Users — Filter by PATIENT",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "http://localhost:8086/api/v1/admin/users?role=PATIENT&page=0&size=10",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8086",
+              "path": ["api", "v1", "admin", "users"],
+              "query": [
+                { "key": "role", "value": "PATIENT" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Disable User",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "http://localhost:8086/api/v1/admin/users/{{target_user_id}}/disable",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8086",
+              "path": ["api", "v1", "admin", "users", "{{target_user_id}}", "disable"]
+            }
+          }
+        },
+        {
+          "name": "Enable User",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "http://localhost:8086/api/v1/admin/users/{{target_user_id}}/enable",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8086",
+              "path": ["api", "v1", "admin", "users", "{{target_user_id}}", "enable"]
+            }
+          }
+        },
+        {
+          "name": "Attempt Disable Admin (should fail 403)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "http://localhost:8086/api/v1/admin/users/33333333-3333-3333-3333-333333333333/disable",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8086",
+              "path": ["api", "v1", "admin", "users", "33333333-3333-3333-3333-333333333333", "disable"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Doctor Management (doctor-service :8083)",
+      "item": [
+        {
+          "name": "List All Doctors",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "http://localhost:8083/api/v1/admin/doctors?page=0&size=20",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["api", "v1", "admin", "doctors"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Appointment Governance (appointment-service :8084)",
+      "item": [
+        {
+          "name": "List All Appointments",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "http://localhost:8084/api/v1/admin/appointments?page=0&size=20",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8084",
+              "path": ["api", "v1", "admin", "appointments"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" },
+                { "key": "status", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Appointments — Filter PENDING",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "http://localhost:8084/api/v1/admin/appointments?status=PENDING&page=0&size=20",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8084",
+              "path": ["api", "v1", "admin", "appointments"],
+              "query": [
+                { "key": "status", "value": "PENDING" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Force Cancel Appointment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Cancelled by admin — policy violation\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8084/api/v1/admin/appointments/{{target_appointment_id}}/cancel",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8084",
+              "path": ["api", "v1", "admin", "appointments", "{{target_appointment_id}}", "cancel"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Security Tests",
+      "item": [
+        {
+          "name": "Patient JWT → Admin Users (should 403)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer PATIENT_JWT_HERE" }],
+            "url": {
+              "raw": "http://localhost:8086/api/v1/admin/users",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8086",
+              "path": ["api", "v1", "admin", "users"]
+            }
+          }
+        },
+        {
+          "name": "No Token → Admin Appointments (should 401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8084/api/v1/admin/appointments",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8084",
+              "path": ["api", "v1", "admin", "appointments"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
