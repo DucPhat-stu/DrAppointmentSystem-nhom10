@@ -72,6 +72,7 @@
 }
 
 .filters input,
+.filters select,
 .reasonField textarea {
   min-height: 42px;
   padding: 0 12px;

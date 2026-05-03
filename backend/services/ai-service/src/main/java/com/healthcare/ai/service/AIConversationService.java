@@ -11,18 +11,21 @@ public class AIConversationService {
     private final AIResponseParser parser;
     private final AITextFormatter formatter;
     private final DynamicPromptBuilder dynamicPromptBuilder;
+    private final AILocalSymptomAnalyzer localSymptomAnalyzer;
 
     @Autowired
     public AIConversationService(AIPromptBuilder promptBuilder,
                                  DynamicPromptBuilder dynamicPromptBuilder,
                                  AIClient aiClient,
                                  AIResponseParser parser,
-                                 AITextFormatter formatter) {
+                                 AITextFormatter formatter,
+                                 AILocalSymptomAnalyzer localSymptomAnalyzer) {
         this.promptBuilder = promptBuilder;
         this.dynamicPromptBuilder = dynamicPromptBuilder;
         this.aiClient = aiClient;
         this.parser = parser;
         this.formatter = formatter;
+        this.localSymptomAnalyzer = localSymptomAnalyzer;
     }
 
     AIConversationService(AIPromptBuilder promptBuilder,
@@ -34,12 +37,13 @@ public class AIConversationService {
         this.aiClient = aiClient;
         this.parser = parser;
         this.formatter = formatter;
+        this.localSymptomAnalyzer = new AILocalSymptomAnalyzer();
     }
 
     public String checkSymptoms(String text) {
         String prompt = promptBuilder.buildTextPrompt(text);
         String rawResponse = aiClient.generate(prompt);
-        return formatter.format(parser.parse(rawResponse));
+        return formatter.format(parseOrLocalFallback(rawResponse, text));
     }
 
     public String checkStructuredSymptoms(StructuredAICheckRequest request) {
@@ -47,7 +51,8 @@ public class AIConversationService {
                 ? promptBuilder.buildStructuredPrompt(request)
                 : dynamicPromptBuilder.build(request);
         String rawResponse = aiClient.generate(prompt);
-        return formatter.format(parser.parse(rawResponse));
+        String sourceText = "%s %s".formatted(request.symptoms(), request.description() == null ? "" : request.description());
+        return formatter.format(parseOrLocalFallback(rawResponse, sourceText));
     }
 
     public String previewStructuredPrompt(StructuredAICheckRequest request) {
@@ -55,5 +60,19 @@ public class AIConversationService {
             return promptBuilder.buildStructuredPrompt(request);
         }
         return dynamicPromptBuilder.build(request);
+    }
+
+    private com.healthcare.ai.dto.AICheckResponse parseOrLocalFallback(String rawResponse, String sourceText) {
+        com.healthcare.ai.dto.AICheckResponse parsed = parser.parse(rawResponse);
+        if (isGenericFallback(parsed)) {
+            return localSymptomAnalyzer.analyze(sourceText);
+        }
+        return parsed;
+    }
+
+    private static boolean isGenericFallback(com.healthcare.ai.dto.AICheckResponse response) {
+        return response == null
+                || response.possibleConditions().contains("Khong xac dinh")
+                || response.symptomsDetected().contains("Khong the phan tich");
     }
 }

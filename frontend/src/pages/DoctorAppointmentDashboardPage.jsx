@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   cancelDoctorAppointment,
   completeDoctorAppointment,
@@ -30,6 +31,11 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function dateOnly(value) {
+  if (!value) return today();
+  return new Date(value).toISOString().slice(0, 10);
+}
+
 function formatDateTime(value) {
   if (!value) return '-';
   return new Intl.DateTimeFormat('en', {
@@ -56,7 +62,10 @@ function isPrimaryAction(action) {
 }
 
 export default function DoctorAppointmentDashboardPage() {
-  const [filters, setFilters] = useState({ date: today(), status: '', page: 0, size: 10 });
+  const [searchParams] = useSearchParams();
+  const appointmentId = searchParams.get('appointmentId');
+  const requestedStatus = searchParams.get('status') ?? '';
+  const [filters, setFilters] = useState({ date: today(), status: requestedStatus, page: 0, size: 10 });
   const [pageData, setPageData] = useState({ content: [], page: 0, size: 10, totalElements: 0, totalPages: 0 });
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -78,7 +87,7 @@ export default function DoctorAppointmentDashboardPage() {
     [filters.page, pageData.totalPages],
   );
 
-  async function loadAppointments(nextFilters = filters) {
+  async function loadAppointments(nextFilters = filters, preferredSelected = null) {
     setLoading(true);
     setError('');
     try {
@@ -86,9 +95,12 @@ export default function DoctorAppointmentDashboardPage() {
       const data = response.data ?? { content: [], page: 0, size: nextFilters.size, totalElements: 0, totalPages: 0 };
       setPageData(data);
       if (data.content.length > 0) {
-        setSelected((current) => data.content.find((item) => item.id === current?.id) ?? data.content[0]);
+        setSelected((current) => {
+          const preferredId = preferredSelected?.id ?? current?.id;
+          return data.content.find((item) => item.id === preferredId) ?? preferredSelected ?? data.content[0];
+        });
       } else {
-        setSelected(null);
+        setSelected(preferredSelected);
       }
     } catch (err) {
       setError(err.message ?? 'Unable to load appointments');
@@ -98,8 +110,51 @@ export default function DoctorAppointmentDashboardPage() {
   }
 
   useEffect(() => {
-    loadAppointments();
-  }, []);
+    let cancelled = false;
+
+    async function loadInitialView() {
+      if (!appointmentId) {
+        const nextFilters = { ...filters, status: requestedStatus, page: 0 };
+        setFilters(nextFilters);
+        await loadAppointments(nextFilters);
+        return;
+      }
+
+      setLoading(true);
+      setDetailLoading(true);
+      setError('');
+      try {
+        const response = await fetchDoctorAppointment(appointmentId);
+        if (cancelled) return;
+
+        const appointment = response.data;
+        const nextFilters = {
+          ...filters,
+          date: dateOnly(appointment?.scheduledStart),
+          status: appointment?.status ?? requestedStatus,
+          page: 0,
+        };
+
+        setSelected(appointment);
+        setFilters(nextFilters);
+        await loadAppointments(nextFilters, appointment);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message ?? 'Unable to load appointment detail');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+          setDetailLoading(false);
+        }
+      }
+    }
+
+    loadInitialView();
+    return () => {
+      cancelled = true;
+    };
+  }, [appointmentId, requestedStatus]);
 
   useEffect(() => {
     if (!selected?.id) {

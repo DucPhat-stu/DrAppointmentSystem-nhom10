@@ -4,13 +4,33 @@
 
 import { clearSession, loadSession, updateAccessToken } from './sessionStorageService.js';
 
+const DEV_SERVICE_URLS = {
+  auth: '/auth-api',
+  user: '/user-api',
+  doctor: '/doctor-api',
+  appointment: '/appointment-api',
+  notification: '/notification-api',
+  ai: '/ai-api',
+};
+
+const LOCAL_SERVICE_URLS = {
+  auth: 'http://localhost:8086',
+  user: 'http://localhost:8082',
+  doctor: 'http://localhost:8083',
+  appointment: 'http://localhost:8084',
+  notification: 'http://localhost:8085',
+  ai: 'http://localhost:8087',
+};
+
+const DEFAULT_SERVICE_URLS = import.meta.env.DEV ? DEV_SERVICE_URLS : LOCAL_SERVICE_URLS;
+
 const SERVICE_URLS = {
-  auth: import.meta.env.VITE_AUTH_URL ?? 'http://localhost:8086',
-  user: import.meta.env.VITE_USER_URL ?? 'http://localhost:8082',
-  doctor: import.meta.env.VITE_DOCTOR_URL ?? 'http://localhost:8083',
-  appointment: import.meta.env.VITE_APPOINTMENT_URL ?? 'http://localhost:8084',
-  notification: import.meta.env.VITE_NOTIFICATION_URL ?? 'http://localhost:8085',
-  ai: import.meta.env.VITE_AI_URL ?? 'http://localhost:8087',
+  auth: import.meta.env.VITE_AUTH_URL ?? DEFAULT_SERVICE_URLS.auth,
+  user: import.meta.env.VITE_USER_URL ?? DEFAULT_SERVICE_URLS.user,
+  doctor: import.meta.env.VITE_DOCTOR_URL ?? DEFAULT_SERVICE_URLS.doctor,
+  appointment: import.meta.env.VITE_APPOINTMENT_URL ?? DEFAULT_SERVICE_URLS.appointment,
+  notification: import.meta.env.VITE_NOTIFICATION_URL ?? DEFAULT_SERVICE_URLS.notification,
+  ai: import.meta.env.VITE_AI_URL ?? DEFAULT_SERVICE_URLS.ai,
 };
 
 function buildUrl(service, path) {

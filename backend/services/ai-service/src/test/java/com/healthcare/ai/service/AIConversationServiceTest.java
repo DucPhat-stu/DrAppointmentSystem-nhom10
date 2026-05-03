@@ -26,6 +26,21 @@ class AIConversationServiceTest {
     }
 
     @Test
+    void checkSymptomsUsesLocalFallbackWhenGeminiIsUnavailable() {
+        AIConversationService service = new AIConversationService(
+                new AIPromptBuilder(new AIInputSanitizer()),
+                new AIClient(new GeminiProperties(), new AIClientProperties(), new ObjectMapper()),
+                new AIResponseParser(new ObjectMapper()),
+                new AITextFormatter()
+        );
+
+        String result = service.checkSymptoms("Ho, sot cao");
+
+        assertThat(result).contains("Nhiem trung hoac cam/cum");
+        assertThat(result).doesNotContain("Khong xac dinh");
+    }
+
+    @Test
     void checkStructuredSymptomsReturnsFormattedText() {
         AIConversationService service = new AIConversationService(
                 new AIPromptBuilder(new AIInputSanitizer()),

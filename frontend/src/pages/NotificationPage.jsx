@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth.js';
 import { fetchNotifications, markNotificationRead, markNotificationsRead } from '../services/notificationService.js';
 import styles from './Phase3Pages.module.css';
+
+function appointmentPathForRole(role, appointmentId) {
+  const normalizedRole = role?.replace(/^ROLE_/, '').toUpperCase();
+  if (normalizedRole === 'DOCTOR') {
+    return `/doctor/appointments?appointmentId=${appointmentId}`;
+  }
+  return `/appointments/${appointmentId}`;
+}
 
 function formatDateTime(value) {
   if (!value) return '-';
@@ -12,6 +21,7 @@ function formatDateTime(value) {
 }
 
 export default function NotificationPage() {
+  const { session } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -113,7 +123,7 @@ export default function NotificationPage() {
                 <p>{notification.content}</p>
                 <div className={styles.rowActions}>
                   {notification.appointmentId ? (
-                    <Link className={styles.linkButton} to={`/appointments/${notification.appointmentId}`}>
+                    <Link className={styles.linkButton} to={appointmentPathForRole(session?.role, notification.appointmentId)}>
                       Appointment
                     </Link>
                   ) : (

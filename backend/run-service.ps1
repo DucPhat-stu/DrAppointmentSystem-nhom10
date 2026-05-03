@@ -248,7 +248,6 @@ $env:DB_URL = $DbUrl
 if (-not $env:DB_USERNAME) { $env:DB_USERNAME = 'healthcare' }
 if (-not $env:DB_PASSWORD) { $env:DB_PASSWORD = 'healthcare' }
 if (-not $env:JWT_SECRET) { $env:JWT_SECRET = 'local-dev-healthcare-jwt-secret-change-before-prod' }
-if ($Service -eq 'ai-service' -and -not $env:AI_API_KEY) { $env:AI_API_KEY = 'AIzaSyD6lDvhXyLYyytfPiEbfRbr4krySIbfwKg' }
 if (-not $env:RABBITMQ_URL) { $env:RABBITMQ_URL = 'amqp://healthcare:healthcare@localhost:5673' }
 if (-not $env:REDIS_HOST) { $env:REDIS_HOST = 'localhost' }
 if (-not $env:REDIS_PORT) { $env:REDIS_PORT = '6379' }

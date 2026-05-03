@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth.js';
 import { fetchAvailableDoctors } from '../services/doctorService.js';
 import styles from './DoctorListPage.module.css';
 
@@ -21,6 +22,9 @@ function bookingUrl(doctor) {
 }
 
 export default function DoctorListPage() {
+  const { session } = useAuth();
+  const role = session?.role?.replace(/^ROLE_/, '').toUpperCase();
+  const isDoctor = role === 'DOCTOR';
   const [date, setDate] = useState(today());
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +48,15 @@ export default function DoctorListPage() {
     loadDoctors();
   }, [loadDoctors]);
 
+  const groupedDoctors = useMemo(() => doctors.reduce((groups, doctor) => {
+    const department = doctor.department || doctor.specialty || 'General care';
+    if (!groups.has(department)) {
+      groups.set(department, []);
+    }
+    groups.get(department).push(doctor);
+    return groups;
+  }, new Map()), [doctors]);
+
   async function applyDate(event) {
     event.preventDefault();
     await loadDoctors(date);
@@ -54,7 +67,7 @@ export default function DoctorListPage() {
       <div className={styles.header}>
         <div>
           <p className={styles.eyebrow}>Doctors</p>
-          <h1 className={styles.title}>Available doctors</h1>
+          <h1 className={styles.title}>{isDoctor ? 'Doctor directory by department' : 'Available doctors'}</h1>
         </div>
         <button className={styles.secondaryButton} type="button" onClick={() => loadDoctors()} disabled={loading}>
           Refresh
@@ -89,6 +102,31 @@ export default function DoctorListPage() {
           <p className={styles.empty}>Loading doctors...</p>
         ) : doctors.length === 0 ? (
           <p className={styles.empty}>No doctors have available slots for this date.</p>
+        ) : isDoctor ? (
+          <div className={styles.groupList}>
+            {[...groupedDoctors.entries()].map(([department, items]) => (
+              <section className={styles.group} key={department}>
+                <div className={styles.groupHeader}>
+                  <h3>{department}</h3>
+                  <span>{items.length} doctors</span>
+                </div>
+                <div className={styles.grid}>
+                  {items.map((doctor) => (
+                    <article className={styles.card} key={doctor.doctorId}>
+                      <div>
+                        <strong>{doctor.fullName}</strong>
+                        <small>{doctor.specialty ?? 'General care'}</small>
+                        <span>{doctor.availableSlots > 0 ? `${doctor.availableSlots} open slots on selected date` : 'No open slots on selected date'}</span>
+                      </div>
+                      <span className={doctor.availableSlots > 0 ? styles.statusOpen : styles.statusBusy}>
+                        {doctor.availableSlots > 0 ? 'Has schedule' : 'No schedule'}
+                      </span>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
         ) : (
           <div className={styles.grid}>
             {doctors.map((doctor) => (

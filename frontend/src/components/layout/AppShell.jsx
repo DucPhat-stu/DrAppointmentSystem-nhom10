@@ -1,4 +1,4 @@
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth.js';
 import styles from './AppShell.module.css';
 
@@ -30,8 +30,8 @@ const navItems = [
     ),
   },
   {
-    to: '/doctor/appointments',
-    label: 'Appointments',
+    to: '/doctor/appointments?status=PENDING',
+    label: 'Yêu cầu hẹn',
     doctorOnly: true,
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -74,6 +74,7 @@ const navItems = [
   {
     to: '/appointments/book',
     label: 'Đặt lịch',
+    patientOnly: true,
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -86,6 +87,22 @@ const navItems = [
   {
     to: '/appointments',
     label: 'Lịch hẹn',
+    patientOnly: true,
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 2v4"/>
+        <path d="M16 2v4"/>
+        <rect x="3" y="4" width="18" height="18" rx="2"/>
+        <path d="M3 10h18"/>
+        <path d="M8 14h8"/>
+        <path d="M8 18h5"/>
+      </svg>
+    ),
+  },
+  {
+    to: '/doctor/appointments?status=CONFIRMED',
+    label: 'Lịch hẹn',
+    doctorOnly: true,
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M8 2v4"/>
@@ -123,6 +140,9 @@ const navItems = [
 
 export default function AppShell({ children }) {
   const { session, logoutAction } = useAuth();
+  const role = session?.role?.replace(/^ROLE_/, '').toUpperCase();
+  const location = useLocation();
+  const currentPath = `${location.pathname}${location.search}`;
 
   return (
     <div className={styles.shell}>
@@ -140,14 +160,16 @@ export default function AppShell({ children }) {
 
           <nav className={styles.nav}>
             {navItems
-              .filter((item) => !item.doctorOnly || session?.role === 'DOCTOR')
-              .filter((item) => !item.adminOnly || session?.role === 'ADMIN' || session?.role === 'SUPER_ADMIN')
+              .filter((item) => !item.doctorOnly || role === 'DOCTOR')
+              .filter((item) => !item.patientOnly || role === 'PATIENT')
+              .filter((item) => !item.adminOnly || role === 'ADMIN' || role === 'SUPER_ADMIN')
               .map((item) => (
                 <NavLink
                   key={item.to}
-                  className={({ isActive }) =>
-                    `${styles.navLink} ${isActive ? styles.active : ''}`
-                  }
+                  className={({ isActive }) => {
+                    const active = item.to.includes('?') ? currentPath === item.to : isActive;
+                    return `${styles.navLink} ${active ? styles.active : ''}`;
+                  }}
                   to={item.to}
                 >
                   <span className={styles.navIcon}>{item.icon}</span>
