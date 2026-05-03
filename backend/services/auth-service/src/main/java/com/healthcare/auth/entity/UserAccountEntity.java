@@ -89,8 +89,16 @@ public class UserAccountEntity {
         this.status = status;
     }
 
+    public String getFullName() {
+        return fullName;
+    }
+
     public void setFullName(String fullName) {
         this.fullName = fullName;
+    }
+
+    public String getPhone() {
+        return phone;
     }
 
     public void setPhone(String phone) {
@@ -101,12 +109,20 @@ public class UserAccountEntity {
         this.failedLoginAttempts = failedLoginAttempts;
     }
 
+    public OffsetDateTime getLastLoginAt() {
+        return lastLoginAt;
+    }
+
     public void setLastLoginAt(OffsetDateTime lastLoginAt) {
         this.lastLoginAt = lastLoginAt;
     }
 
     public Integer getFailedLoginAttempts() {
         return failedLoginAttempts;
+    }
+
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
     }
 
     public void setCreatedAt(OffsetDateTime createdAt) {
