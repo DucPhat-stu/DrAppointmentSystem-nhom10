@@ -199,6 +199,51 @@ public class AppointmentService {
         return transition(doctorId, appointmentId, "COMPLETE", idempotencyKey, AppointmentStatus.COMPLETED, "APPOINTMENT_COMPLETED", null);
     }
 
+    // -------------------------------------------------------------------------
+    // Admin methods
+    // -------------------------------------------------------------------------
+
+    @Transactional(readOnly = true)
+    public AppointmentPageResponse findAllAppointments(String rawStatus, int page, int size) {
+        AppointmentStatus status = parseStatus(rawStatus);
+        PageRequest pageRequest = PageRequest.of(
+                Math.max(page, 0),
+                Math.min(Math.max(size, 1), 100),
+                Sort.by(Sort.Direction.DESC, "scheduledStart")
+        );
+        var appointments = appointmentRepository.findAll(filterByStatus(status), pageRequest);
+        return new AppointmentPageResponse(
+                appointments.getContent().stream().map(this::toResponse).toList(),
+                appointments.getNumber(),
+                appointments.getSize(),
+                appointments.getTotalElements(),
+                appointments.getTotalPages()
+        );
+    }
+
+    @Transactional
+    public AppointmentResponse adminCancelAppointment(UUID adminId,
+                                                      UUID appointmentId,
+                                                      String reason) {
+        AppointmentEntity appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, "Appointment not found"));
+
+        if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
+            return toResponse(appointment);
+        }
+
+        validateTransition(appointment.getStatus(), AppointmentStatus.CANCELLED);
+        appointment.setStatus(AppointmentStatus.CANCELLED);
+        appointment.setCancellationReason(reason != null && !reason.isBlank() ? reason.trim() : "Cancelled by admin");
+
+        AppointmentEntity saved = appointmentRepository.save(appointment);
+        if (saved.getSlotId() != null) {
+            slotSyncService.enqueueRelease(saved);
+        }
+        eventPublisher.publishStatusChanged("APPOINTMENT_CANCELLED_BY_ADMIN", saved);
+        return toResponse(saved);
+    }
+
     @Transactional
     public AppointmentResponse cancelPatientAppointment(UUID patientId,
                                                         UUID appointmentId,
@@ -436,6 +481,15 @@ public class AppointmentService {
                 predicates.add(criteriaBuilder.equal(root.get("status"), status));
             }
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
+        };
+    }
+
+    private Specification<AppointmentEntity> filterByStatus(AppointmentStatus status) {
+        return (root, query, criteriaBuilder) -> {
+            if (status == null) {
+                return criteriaBuilder.conjunction();
+            }
+            return criteriaBuilder.equal(root.get("status"), status);
         };
     }
 
