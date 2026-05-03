@@ -5,10 +5,10 @@ import styles from './ChatbotPage.module.css';
 
 const COOLDOWN_MS = 2000;
 const DURATION_OPTIONS = [
-  { value: '', label: 'Chon thoi gian' },
-  { value: 'LESS_THAN_ONE_DAY', label: 'Duoi 1 ngay' },
-  { value: 'ONE_TO_THREE_DAYS', label: '1-3 ngay' },
-  { value: 'MORE_THAN_THREE_DAYS', label: 'Hon 3 ngay' },
+  { value: '', label: 'Select a timeframe' },
+  { value: 'LESS_THAN_ONE_DAY', label: 'Less than 1 day' },
+  { value: 'ONE_TO_THREE_DAYS', label: '1-3 days' },
+  { value: 'MORE_THAN_THREE_DAYS', label: 'More than 3 days' },
 ];
 
 function createMessage(role, text) {
@@ -21,7 +21,7 @@ function createMessage(role, text) {
 
 export default function ChatbotPage() {
   const [messages, setMessages] = useState([
-    createMessage('assistant', 'Mo ta trieu chung cua ban, toi se goi y thong tin tham khao va chuyen khoa phu hop.'),
+    createMessage('assistant', 'Describe your symptoms, I\'ll suggest relevant information and suitable specialties.'),
   ]);
   const [inputText, setInputText] = useState('');
   const [mode, setMode] = useState('text');
@@ -56,33 +56,33 @@ export default function ChatbotPage() {
   const errorMessage = (requestError) => {
     if (requestError instanceof ApiError) {
       if (requestError.status === 400) {
-        return 'Vui long nhap trieu chung tu 5 den 500 ky tu.';
+        return 'Please enter symptoms between 5 and 500 characters.';
       }
       if (requestError.status === 500) {
-        return 'Loi server, vui long lien he ho tro.';
+        return 'Server error, please contact support.';
       }
       if (requestError.status === 503) {
-        return 'AI dang tam thoi qua tai, vui long thu lai sau.';
+        return 'AI service is temporarily busy, please try again later.';
       }
     }
 
     if (requestError?.name === 'TypeError') {
-      return 'Kiem tra ket noi internet hoac trang thai ai-service.';
+      return 'Check your internet connection or AI service status.';
     }
 
-    return requestError?.message || 'Co loi xay ra, vui long thu lai.';
+    return requestError?.message || 'An error occurred, please try again.';
   };
 
   const sendMessage = async (text, options = {}) => {
     const normalized = text.trim();
     if (normalized.length < 5) {
-      setError('Vui long nhap trieu chung toi thieu 5 ky tu.');
+      setError('Please enter at least 5 characters for symptoms.');
       return;
     }
 
     const now = Date.now();
     if (!options.retry && now - lastRequestAt < COOLDOWN_MS) {
-      setError('Vui long doi 2 giay truoc khi gui tiep.');
+      setError('Please wait 2 seconds before sending again.');
       return;
     }
 
@@ -116,14 +116,14 @@ export default function ChatbotPage() {
 
   const sendStructuredMessage = async (payload) => {
     const userSummary = [
-      `Trieu chung: ${payload.symptoms}`,
-      `Thoi gian: ${DURATION_OPTIONS.find((option) => option.value === payload.duration)?.label}`,
-      payload.description ? `Mo ta them: ${payload.description}` : null,
+      `Symptoms: ${payload.symptoms}`,
+      `Duration: ${DURATION_OPTIONS.find((option) => option.value === payload.duration)?.label}`,
+      payload.description ? `Additional description: ${payload.description}` : null,
     ].filter(Boolean).join('. ');
 
     const now = Date.now();
     if (now - lastRequestAt < COOLDOWN_MS) {
-      setError('Vui long doi 2 giay truoc khi gui tiep.');
+      setError('Please wait 2 seconds before sending again.');
       return;
     }
 
@@ -158,7 +158,7 @@ export default function ChatbotPage() {
     event.preventDefault();
     if (mode === 'structured') {
       if (!symptoms.trim() || !duration) {
-        setError('Vui long nhap trieu chung va thoi gian xuat hien.');
+        setError('Please enter symptoms and duration.');
         return;
       }
       await sendStructuredMessage({
@@ -180,7 +180,7 @@ export default function ChatbotPage() {
 
   const handlePreviewPrompt = async () => {
     if (!symptoms.trim() || !duration) {
-      setError('Vui long nhap trieu chung va thoi gian truoc khi xem preview.');
+      setError('Please enter symptoms and duration before previewing.');
       return;
     }
 
@@ -203,7 +203,7 @@ export default function ChatbotPage() {
       .filter((message) => message.role === 'ASSISTANT')
       .at(-1);
     if (!latestAssistant?.id) {
-      setError('Chua co cau tra loi AI nao trong lich su de danh gia.');
+      setError('No AI responses in history to rate.');
       return;
     }
     try {
@@ -217,7 +217,7 @@ export default function ChatbotPage() {
   const handleDoctorRecommendation = async () => {
     const source = mode === 'text' ? inputText : symptoms;
     if (!source.trim()) {
-      setError('Nhap trieu chung truoc khi goi y bac si.');
+      setError('Enter symptoms before recommending doctors.');
       return;
     }
     try {
@@ -276,7 +276,7 @@ export default function ChatbotPage() {
   const handleRisk = async () => {
     const source = currentSymptomText();
     if (!source) {
-      setError('Nhap trieu chung truoc khi tao canh bao rui ro.');
+      setError('Enter symptoms before creating risk alert.');
       return;
     }
     try {
@@ -292,65 +292,65 @@ export default function ChatbotPage() {
       <section className={styles.header}>
         <div>
           <p className={styles.eyebrow}>AI symptom assistant</p>
-          <h1 className={styles.title}>Chat suc khoe</h1>
+          <h1 className={styles.title}>Health Chat</h1>
           <p className={styles.subtitle}>
-            Ket qua chi mang tinh tham khao va khong thay the chan doan y khoa.
+            Results are for reference only and cannot replace medical diagnosis.
           </p>
         </div>
       </section>
 
       <section className={styles.toolPanel}>
         <article className={styles.toolCard}>
-          <h2>Lich su hoi thoai</h2>
+          <h2>Chat History</h2>
           <ul className={styles.historyList}>
-            {history.length === 0 ? <li>Chua co lich su.</li> : history.map((conversation) => (
+            {history.length === 0 ? <li>No history.</li> : history.map((conversation) => (
               <li key={conversation.id}>{conversation.title}</li>
             ))}
           </ul>
           <div className={styles.feedbackRow}>
-            <button type="button" onClick={() => handleFeedback(5)}>Huu ich</button>
-            <button type="button" onClick={() => handleFeedback(1)}>Chua dung</button>
+            <button type="button" onClick={() => handleFeedback(5)}>Helpful</button>
+            <button type="button" onClick={() => handleFeedback(1)}>Not accurate</button>
           </div>
         </article>
 
         <article className={styles.toolCard}>
-          <h2>Goi y bac si</h2>
-          <button type="button" onClick={handleDoctorRecommendation}>Tim bac si phu hop</button>
+          <h2>Doctor Recommendations</h2>
+          <button type="button" onClick={handleDoctorRecommendation}>Find suitable doctors</button>
           {doctorRecommendations.map((doctor) => (
             <p key={`${doctor.doctorName}-${doctor.specialty}`}>{doctor.doctorName} - {doctor.specialty} ({Math.round(doctor.matchScore * 100)}%)</p>
           ))}
         </article>
 
         <article className={styles.toolCard}>
-          <h2>Phan tich hinh anh</h2>
+          <h2>Image Analysis</h2>
           <label>
-            Upload image
+            Upload Image
             <input type="file" accept="image/*" onChange={handleImageAnalysis} />
           </label>
           {imageResult && <p>{imageResult.finding} Confidence {Math.round(imageResult.confidence * 100)}%</p>}
         </article>
 
         <article className={styles.toolCard}>
-          <h2>Tai kham</h2>
-          <button type="button" onClick={handleFollowUp}>Goi y lich tai kham</button>
+          <h2>Follow-up</h2>
+          <button type="button" onClick={handleFollowUp}>Suggest follow-up schedule</button>
           {followUp && <p>{followUp.recommendedWindow}: {followUp.reason}</p>}
         </article>
 
         <article className={styles.toolCard}>
-          <h2>Thoi gian cho</h2>
-          <button type="button" onClick={handleWaitTime}>Du doan</button>
-          {waitTime && <p>{waitTime.estimatedMinutes} phut - {waitTime.confidence}</p>}
+          <h2>Wait Time</h2>
+          <button type="button" onClick={handleWaitTime}>Predict</button>
+          {waitTime && <p>{waitTime.estimatedMinutes} minutes - {waitTime.confidence}</p>}
         </article>
 
         <article className={styles.toolCard}>
-          <h2>Canh bao rui ro</h2>
-          <button type="button" onClick={handleRisk}>Quet rui ro</button>
+          <h2>Risk Alert</h2>
+          <button type="button" onClick={handleRisk}>Check risk</button>
           {riskAlert && <p>{riskAlert.level}: {riskAlert.nextStep}</p>}
         </article>
 
         <article className={`${styles.toolCard} ${styles.wideToolCard}`}>
-          <h2>Xu huong benh</h2>
-          <button type="button" onClick={handleTrends}>Tai dashboard xu huong</button>
+          <h2>Disease Trends</h2>
+          <button type="button" onClick={handleTrends}>Load trends dashboard</button>
           <div className={styles.trendGrid}>
             {trends.map((trend) => (
               <p key={trend.disease}>{trend.disease}: {trend.trend} ({trend.cases})</p>
@@ -367,7 +367,7 @@ export default function ChatbotPage() {
               className={`${styles.message} ${message.role === 'user' ? styles.userMessage : styles.aiMessage}`}
             >
               <span className={styles.messageLabel}>
-                {message.role === 'user' ? 'Ban' : 'AI'}
+                {message.role === 'user' ? 'You' : 'AI'}
               </span>
               <p>{message.text}</p>
             </article>
@@ -377,20 +377,20 @@ export default function ChatbotPage() {
               <span className={styles.messageLabel}>AI</span>
               <p>
                 <span className={styles.spinner} aria-hidden="true" />
-                Dang xu ly...
+                Processing...
               </p>
             </article>
           )}
           <div ref={messagesEndRef} />
         </div>
 
-        {timeoutWarning && <div className={styles.warningBox}>Yeu cau dang lau hon du kien, vui long doi them trong giay lat.</div>}
+        {timeoutWarning && <div className={styles.warningBox}>Request is taking longer than expected, please wait a moment.</div>}
         {error && (
           <div className={styles.errorBox}>
             <span>{error}</span>
             {retryText && !loading && (
               <button type="button" onClick={handleRetry}>
-                Thu lai
+                Retry
               </button>
             )}
           </div>
@@ -423,13 +423,13 @@ export default function ChatbotPage() {
             {mode === 'text' ? (
               <>
                 <label className={styles.inputLabel} htmlFor="symptomsText">
-                  Trieu chung
+                  Symptoms
                 </label>
                 <textarea
                   id="symptomsText"
                   value={inputText}
                   onChange={(event) => setInputText(event.target.value)}
-                  placeholder="Mo ta trieu chung cua ban..."
+                  placeholder="Describe your symptoms..."
                   maxLength={500}
                   disabled={loading}
                 />
@@ -437,17 +437,17 @@ export default function ChatbotPage() {
             ) : (
               <div className={styles.structuredGrid}>
                 <label>
-                  <span>Trieu chung</span>
+                  <span>Symptoms</span>
                   <input
                     value={symptoms}
                     onChange={(event) => setSymptoms(event.target.value)}
-                    placeholder="Vi du: ho, sot, dau dau"
+                    placeholder="E.g., cough, fever, headache"
                     maxLength={180}
                     disabled={loading}
                   />
                 </label>
                 <label>
-                  <span>Thoi gian</span>
+                  <span>Duration</span>
                   <select value={duration} onChange={(event) => setDuration(event.target.value)} disabled={loading}>
                     {DURATION_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -457,11 +457,11 @@ export default function ChatbotPage() {
                   </select>
                 </label>
                 <label className={styles.fullField}>
-                  <span>Mo ta them</span>
+                  <span>Additional description</span>
                   <textarea
                     value={description}
                     onChange={(event) => setDescription(event.target.value)}
-                    placeholder="Tinh trang, muc do dau, thuoc da dung..."
+                    placeholder="Condition, pain level, medications used..."
                     maxLength={300}
                     disabled={loading}
                   />
@@ -481,7 +481,7 @@ export default function ChatbotPage() {
             type="submit"
             disabled={loading || (mode === 'text' ? !inputText.trim() : !symptoms.trim() || !duration)}
           >
-            {loading ? 'Dang xu ly' : 'Gui'}
+            {loading ? 'Processing' : 'Send'}
           </button>
         </form>
       </section>

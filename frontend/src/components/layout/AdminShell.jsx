@@ -18,7 +18,7 @@ const adminNavItems = [
   },
   {
     to: '/admin/users',
-    label: 'Người dùng',
+    label: 'Users',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -30,7 +30,7 @@ const adminNavItems = [
   },
   {
     to: '/admin/doctors',
-    label: 'Bác sĩ',
+    label: 'Doctors',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -40,7 +40,7 @@ const adminNavItems = [
   },
   {
     to: '/admin/appointments',
-    label: 'Lịch hẹn',
+    label: 'Appointments',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2"/>
@@ -53,7 +53,7 @@ const adminNavItems = [
   },
   {
     to: '/admin/leaves',
-    label: 'Nghỉ phép',
+    label: 'Leave requests',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2"/>
@@ -82,7 +82,6 @@ export default function AdminShell({ children }) {
 
   return (
     <div className={styles.shell}>
-      {/* Top Header Bar */}
       <header className={styles.header}>
         <div className={styles.headerLeft}>
           <Link to="/admin" className={styles.brand}>
@@ -115,7 +114,7 @@ export default function AdminShell({ children }) {
             type="button"
             className={styles.switchBtn}
             onClick={() => navigate('/doctors')}
-            title="Switch to Patient View"
+            title="Switch to patient portal"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 3 21 3 21 9"/>
@@ -137,12 +136,11 @@ export default function AdminShell({ children }) {
               <polyline points="16 17 21 12 16 7"/>
               <line x1="21" y1="12" x2="9" y2="12"/>
             </svg>
-            Đăng xuất
+            Sign out
           </button>
         </div>
       </header>
 
-      {/* Main content */}
       <main className={styles.main}>{children}</main>
     </div>
   );

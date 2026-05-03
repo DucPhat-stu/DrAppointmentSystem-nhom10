@@ -1,20 +1,15 @@
 import { useEffect, useState } from 'react';
-import { fetchAdminUsers, fetchAdminDoctors, fetchAdminAppointments } from '../../services/adminService.js';
+import { fetchAdminAppointments, fetchAdminDoctors, fetchAdminUsers } from '../../services/adminService.js';
 import styles from './AdminDashboardPage.module.css';
-
-/* ---------------------------------------------------------------
-   Static KPI + live-count healthcare analytics dashboard
-   Inspired by Power BI enterprise healthcare dashboards
-   --------------------------------------------------------------- */
 
 const APPOINTMENT_STATUSES = ['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'REJECTED'];
 
 const STATUS_COLORS = {
-  PENDING:   { bg: '#fef9c3', text: '#a16207', bar: '#facc15' },
+  PENDING: { bg: '#fef9c3', text: '#a16207', bar: '#facc15' },
   CONFIRMED: { bg: '#dbeafe', text: '#1e40af', bar: '#3b82f6' },
   COMPLETED: { bg: '#dcfce7', text: '#15803d', bar: '#22c55e' },
   CANCELLED: { bg: '#fee2e2', text: '#dc2626', bar: '#ef4444' },
-  REJECTED:  { bg: '#fce7f3', text: '#9d174d', bar: '#ec4899' },
+  REJECTED: { bg: '#fce7f3', text: '#9d174d', bar: '#ec4899' },
 };
 
 function KpiCard({ icon, label, value, sub, color, trend }) {
@@ -25,7 +20,7 @@ function KpiCard({ icon, label, value, sub, color, trend }) {
       </div>
       <div className={styles.kpiBody}>
         <span className={styles.kpiLabel}>{label}</span>
-        <span className={styles.kpiValue}>{value ?? '—'}</span>
+        <span className={styles.kpiValue}>{value ?? '-'}</span>
         {sub && <span className={styles.kpiSub}>{sub}</span>}
       </div>
       {trend && (
@@ -46,10 +41,7 @@ function BarChart({ data, total }) {
           <div key={label} className={styles.barRow}>
             <span className={styles.barLabel}>{label}</span>
             <div className={styles.barTrack}>
-              <div
-                className={styles.barFill}
-                style={{ width: `${pct}%`, background: color }}
-              />
+              <div className={styles.barFill} style={{ width: `${pct}%`, background: color }} />
             </div>
             <span className={styles.barValue}>{value}</span>
             <span className={styles.barPct}>({pct}%)</span>
@@ -62,31 +54,33 @@ function BarChart({ data, total }) {
 
 function DonutChart({ segments, total }) {
   if (total === 0) return <div className={styles.donutEmpty}>No data</div>;
-  let offset = 25; // start at top
-  const r = 40;
-  const circ = 2 * Math.PI * r;
+  let offset = 25;
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius;
 
   return (
     <div className={styles.donutWrapper}>
       <svg viewBox="0 0 100 100" className={styles.donutSvg}>
         {segments.map(({ label, value, color }) => {
           const pct = value / total;
-          const dash = pct * circ;
-          const gap = circ - dash;
-          const seg = (
+          const dash = pct * circumference;
+          const gap = circumference - dash;
+          const segment = (
             <circle
               key={label}
-              cx="50" cy="50" r={r}
+              cx="50"
+              cy="50"
+              r={radius}
               fill="none"
               stroke={color}
               strokeWidth="18"
               strokeDasharray={`${dash} ${gap}`}
-              strokeDashoffset={`${-offset * circ / 100}`}
+              strokeDashoffset={`${(-offset * circumference) / 100}`}
               transform="rotate(-90 50 50)"
             />
           );
           offset += pct * 100;
-          return seg;
+          return segment;
         })}
         <text x="50" y="46" textAnchor="middle" className={styles.donutCenter}>{total}</text>
         <text x="50" y="58" textAnchor="middle" className={styles.donutSub}>total</text>
@@ -122,26 +116,22 @@ export default function AdminDashboardPage() {
 
         const totalUsers = usersRes.status === 'fulfilled' ? (usersRes.value?.data?.totalElements ?? 0) : 0;
         const totalDoctors = doctorsRes.status === 'fulfilled' ? (doctorsRes.value?.data?.totalElements ?? 0) : 0;
-
-        // Count appointment statuses
-        const apptContent = apptRes.status === 'fulfilled' ? (apptRes.value?.data?.content ?? []) : [];
+        const appointmentRows = apptRes.status === 'fulfilled' ? (apptRes.value?.data?.content ?? []) : [];
         const totalAppts = apptRes.status === 'fulfilled' ? (apptRes.value?.data?.totalElements ?? 0) : 0;
 
         const statusCounts = {};
-        APPOINTMENT_STATUSES.forEach(s => { statusCounts[s] = 0; });
-        apptContent.forEach(a => {
-          if (statusCounts[a.status] !== undefined) statusCounts[a.status]++;
+        APPOINTMENT_STATUSES.forEach((status) => { statusCounts[status] = 0; });
+        appointmentRows.forEach((appointment) => {
+          if (statusCounts[appointment.status] !== undefined) statusCounts[appointment.status]++;
         });
 
-        const completedCount = statusCounts['COMPLETED'];
-        const confirmedCount = statusCounts['CONFIRMED'];
-        const completionRate = totalAppts > 0
-          ? Math.round((completedCount / totalAppts) * 100)
-          : 0;
+        const completedCount = statusCounts.COMPLETED;
+        const confirmedCount = statusCounts.CONFIRMED;
+        const completionRate = totalAppts > 0 ? Math.round((completedCount / totalAppts) * 100) : 0;
 
         setStats({ totalUsers, totalDoctors, totalAppts, confirmedCount, completionRate, statusCounts });
-      } catch (e) {
-        setError('Không thể tải dữ liệu dashboard.');
+      } catch {
+        setError('Unable to load dashboard data.');
       } finally {
         setLoading(false);
       }
@@ -149,14 +139,13 @@ export default function AdminDashboardPage() {
     loadStats();
   }, []);
 
-  const today = new Intl.DateTimeFormat('vi-VN', { dateStyle: 'full' }).format(new Date());
+  const today = new Intl.DateTimeFormat('en-US', { dateStyle: 'full' }).format(new Date());
 
   return (
     <div className={styles.page}>
-      {/* Page header */}
       <div className={styles.pageHeader}>
         <div>
-          <h1 className={styles.pageTitle}>Dashboard Quản trị</h1>
+          <h1 className={styles.pageTitle}>Admin Dashboard</h1>
           <p className={styles.pageDate}>{today}</p>
         </div>
         <span className={styles.liveBadge}>
@@ -169,88 +158,83 @@ export default function AdminDashboardPage() {
 
       {loading ? (
         <div className={styles.loadingGrid}>
-          {[1, 2, 3, 4].map(i => <div key={i} className={styles.skeleton} />)}
+          {[1, 2, 3, 4].map((item) => <div key={item} className={styles.skeleton} />)}
         </div>
       ) : stats && (
         <>
-          {/* KPI Row */}
           <div className={styles.kpiGrid}>
             <KpiCard
               icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
-              label="Tổng người dùng"
+              label="Total users"
               value={stats.totalUsers.toLocaleString()}
               sub="Patients + Doctors"
               color="#0ea5e9"
             />
             <KpiCard
               icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
-              label="Bác sĩ đang hoạt động"
+              label="Active doctors"
               value={stats.totalDoctors.toLocaleString()}
-              sub="Có lịch trong hệ thống"
+              sub="Available in the system"
               color="#10b981"
             />
             <KpiCard
               icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
-              label="Tổng lịch hẹn"
+              label="Total appointments"
               value={stats.totalAppts.toLocaleString()}
-              sub={`${stats.confirmedCount} đang confirmed`}
+              sub={`${stats.confirmedCount} confirmed`}
               color="#8b5cf6"
             />
             <KpiCard
               icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>}
-              label="Tỷ lệ hoàn thành"
+              label="Completion rate"
               value={`${stats.completionRate}%`}
-              sub="Appointment completion rate"
+              sub="Completed appointments"
               color="#f59e0b"
             />
           </div>
 
-          {/* Charts Row */}
           <div className={styles.chartsGrid}>
-            {/* Appointment status distribution */}
             <div className={styles.chartCard}>
               <div className={styles.chartHeader}>
-                <h2 className={styles.chartTitle}>Phân bổ lịch hẹn theo trạng thái</h2>
-                <span className={styles.chartTotal}>{stats.totalAppts} tổng</span>
+                <h2 className={styles.chartTitle}>Appointment status distribution</h2>
+                <span className={styles.chartTotal}>{stats.totalAppts} total</span>
               </div>
               <DonutChart
                 total={stats.totalAppts}
-                segments={APPOINTMENT_STATUSES.map(s => ({
-                  label: s,
-                  value: stats.statusCounts[s] ?? 0,
-                  color: STATUS_COLORS[s].bar,
+                segments={APPOINTMENT_STATUSES.map((status) => ({
+                  label: status,
+                  value: stats.statusCounts[status] ?? 0,
+                  color: STATUS_COLORS[status].bar,
                 }))}
               />
             </div>
 
-            {/* Bar chart */}
             <div className={styles.chartCard}>
               <div className={styles.chartHeader}>
-                <h2 className={styles.chartTitle}>Chi tiết theo trạng thái</h2>
+                <h2 className={styles.chartTitle}>Status detail</h2>
               </div>
               <BarChart
                 total={stats.totalAppts}
-                data={APPOINTMENT_STATUSES.map(s => ({
-                  label: s,
-                  value: stats.statusCounts[s] ?? 0,
-                  color: STATUS_COLORS[s].bar,
+                data={APPOINTMENT_STATUSES.map((status) => ({
+                  label: status,
+                  value: stats.statusCounts[status] ?? 0,
+                  color: STATUS_COLORS[status].bar,
                 }))}
               />
             </div>
 
-            {/* System health */}
             <div className={styles.chartCard}>
               <div className={styles.chartHeader}>
-                <h2 className={styles.chartTitle}>Trạng thái hệ thống</h2>
+                <h2 className={styles.chartTitle}>System status</h2>
               </div>
               <div className={styles.healthList}>
                 {[
-                  { name: 'auth-service',         port: 8086, ok: true },
-                  { name: 'user-service',          port: 8082, ok: true },
-                  { name: 'doctor-service',        port: 8083, ok: true },
-                  { name: 'appointment-service',   port: 8084, ok: true },
-                  { name: 'notification-service',  port: 8085, ok: true },
-                  { name: 'ai-service',            port: 8087, ok: null },
+                  { name: 'auth-service', port: 8086, ok: true },
+                  { name: 'user-service', port: 8082, ok: true },
+                  { name: 'doctor-service', port: 8083, ok: true },
+                  { name: 'appointment-service', port: 8084, ok: true },
+                  { name: 'notification-service', port: 8085, ok: true },
+                  { name: 'ai-service', port: 8087, ok: null },
                 ].map(({ name, port, ok }) => (
                   <div key={name} className={styles.healthRow}>
                     <span className={`${styles.healthDot} ${ok === true ? styles.ok : ok === false ? styles.err : styles.warn}`} />
@@ -265,15 +249,14 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          {/* Quick Links */}
           <div className={styles.quickLinks}>
-            <h2 className={styles.sectionTitle}>Thao tác nhanh</h2>
+            <h2 className={styles.sectionTitle}>Quick actions</h2>
             <div className={styles.quickGrid}>
               {[
-                { to: '/admin/users',        label: 'Quản lý người dùng',  icon: '👥', color: '#0ea5e9' },
-                { to: '/admin/doctors',      label: 'Quản lý bác sĩ',      icon: '🩺', color: '#10b981' },
-                { to: '/admin/appointments', label: 'Quản lý lịch hẹn',    icon: '📅', color: '#8b5cf6' },
-                { to: '/admin/leaves',       label: 'Duyệt nghỉ phép',     icon: '📋', color: '#f59e0b' },
+                { to: '/admin/users', label: 'Manage users', icon: 'Users', color: '#0ea5e9' },
+                { to: '/admin/doctors', label: 'View doctors', icon: 'Doctors', color: '#10b981' },
+                { to: '/admin/appointments', label: 'Manage appointments', icon: 'Calendar', color: '#8b5cf6' },
+                { to: '/admin/leaves', label: 'Review leave requests', icon: 'Leaves', color: '#f59e0b' },
               ].map(({ to, label, icon, color }) => (
                 <a key={to} href={to} className={styles.quickCard} style={{ '--c': color }}>
                   <span className={styles.quickIcon}>{icon}</span>

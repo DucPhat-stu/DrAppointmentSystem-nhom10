@@ -30,7 +30,7 @@ export default function ProfilePage() {
       const res = await fetchProfile();
       setProfile(res.data);
     } catch (err) {
-      setError(err.message || 'Không thể tải thông tin cá nhân');
+      setError(err.message || 'Unable to load profile information');
     } finally {
       setLoadingProfile(false);
     }
@@ -71,9 +71,9 @@ export default function ProfilePage() {
       setSaving(true);
       const res = await updateProfile(formData);
       setProfile(res.data);
-      showToast('success', 'Cập nhật thông tin thành công!');
+      showToast('success', 'Profile updated successfully!');
     } catch (err) {
-      showToast('error', err.message || 'Lưu thất bại, vui lòng thử lại.');
+      showToast('error', err.message || 'Failed to save, please try again.');
       throw err; // re-throw so PersonalInfoSection stays in edit mode
     } finally {
       setSaving(false);
@@ -92,9 +92,9 @@ export default function ProfilePage() {
       setSaving(true);
       const res = await uploadAvatar(file);
       setProfile(res.data);
-      showToast('success', 'Cập nhật ảnh đại diện thành công.');
+      showToast('success', 'Avatar updated successfully.');
     } catch (err) {
-      showToast('error', err.message || 'Không thể upload ảnh đại diện.');
+      showToast('error', err.message || 'Failed to upload avatar.');
     } finally {
       setSaving(false);
       event.target.value = '';
@@ -112,9 +112,9 @@ export default function ProfilePage() {
       });
       setCertForm({ name: '', issuingAuthority: '', issueDate: '', expiryDate: '', documentUrl: '' });
       await loadCertifications();
-      showToast('success', 'Đã thêm chứng chỉ.');
+      showToast('success', 'Certification added.');
     } catch (err) {
-      showToast('error', err.message || 'Không thể lưu chứng chỉ.');
+      showToast('error', err.message || 'Failed to save certification.');
     } finally {
       setSaving(false);
     }
@@ -125,9 +125,9 @@ export default function ProfilePage() {
       setSaving(true);
       await deleteCertification(id);
       await loadCertifications();
-      showToast('success', 'Đã xoá chứng chỉ.');
+      showToast('success', 'Certification deleted.');
     } catch (err) {
-      showToast('error', err.message || 'Không thể xoá chứng chỉ.');
+      showToast('error', err.message || 'Failed to delete certification.');
     } finally {
       setSaving(false);
     }
@@ -155,10 +155,10 @@ export default function ProfilePage() {
             <line x1="15" y1="9" x2="9" y2="15"/>
             <line x1="9" y1="9" x2="15" y2="15"/>
           </svg>
-          <h3>Không thể tải hồ sơ</h3>
+          <h3>Unable to load profile</h3>
           <p>{error}</p>
           <button className={styles.retryBtn} onClick={loadProfile} type="button">
-            Thử lại
+            Retry
           </button>
         </div>
       </div>
@@ -169,9 +169,9 @@ export default function ProfilePage() {
     <div className={styles.page}>
       {/* Page Header */}
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Hồ sơ của tôi</h1>
+        <h1 className={styles.pageTitle}>My Profile</h1>
         <p className={styles.pageSubtitle}>
-          Quản lý thông tin cá nhân và xem lịch sử khám bệnh
+          Manage personal information and view medical history
         </p>
       </div>
 
@@ -198,29 +198,29 @@ export default function ProfilePage() {
         <section className={styles.certSection}>
           <div className={styles.certHeader}>
             <div>
-              <h2>Hồ sơ chuyên môn</h2>
-              <p>Quản lý chứng chỉ và giấy phép hành nghề cho bác sĩ.</p>
+              <h2>Professional Profile</h2>
+              <p>Manage certifications and professional licenses for doctors.</p>
             </div>
           </div>
           <form className={styles.certForm} onSubmit={handleCertSubmit}>
-            <input placeholder="Tên chứng chỉ" value={certForm.name} onChange={(e) => setCertForm((f) => ({ ...f, name: e.target.value }))} required />
-            <input placeholder="Đơn vị cấp" value={certForm.issuingAuthority} onChange={(e) => setCertForm((f) => ({ ...f, issuingAuthority: e.target.value }))} />
+            <input placeholder="Certification Name" value={certForm.name} onChange={(e) => setCertForm((f) => ({ ...f, name: e.target.value }))} required />
+            <input placeholder="Issuing Authority" value={certForm.issuingAuthority} onChange={(e) => setCertForm((f) => ({ ...f, issuingAuthority: e.target.value }))} />
             <input type="date" value={certForm.issueDate} onChange={(e) => setCertForm((f) => ({ ...f, issueDate: e.target.value }))} />
             <input type="date" value={certForm.expiryDate} onChange={(e) => setCertForm((f) => ({ ...f, expiryDate: e.target.value }))} />
-            <input placeholder="URL tài liệu" value={certForm.documentUrl} onChange={(e) => setCertForm((f) => ({ ...f, documentUrl: e.target.value }))} />
-            <button type="submit" disabled={saving}>Thêm chứng chỉ</button>
+            <input placeholder="Document URL" value={certForm.documentUrl} onChange={(e) => setCertForm((f) => ({ ...f, documentUrl: e.target.value }))} />
+            <button type="submit" disabled={saving}>Add Certification</button>
           </form>
           <div className={styles.certList}>
             {certifications.length === 0 ? (
-              <p>Chưa có chứng chỉ.</p>
+              <p>No certifications yet.</p>
             ) : certifications.map((cert) => (
               <article key={cert.id} className={styles.certItem}>
                 <div>
                   <strong>{cert.name}</strong>
-                  <span>{cert.issuingAuthority || 'Không rõ đơn vị cấp'}</span>
-                  <small>{cert.issueDate || '-'} đến {cert.expiryDate || 'không thời hạn'}</small>
+                  <span>{cert.issuingAuthority || 'Unknown issuing authority'}</span>
+                  <small>{cert.issueDate || '-'} to {cert.expiryDate || 'no expiry'}</small>
                 </div>
-                <button type="button" onClick={() => handleDeleteCertification(cert.id)} disabled={saving}>Xoá</button>
+                <button type="button" onClick={() => handleDeleteCertification(cert.id)} disabled={saving}>Delete</button>
               </article>
             ))}
           </div>

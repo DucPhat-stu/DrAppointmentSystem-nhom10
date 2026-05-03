@@ -16,10 +16,10 @@ export default function AdminNotificationsPage() {
     try {
       const recipientIds = form.recipientIds.split(',').map((value) => value.trim()).filter(Boolean);
       const response = await broadcastNotification({ recipientIds, title: form.title, content: form.content });
-      setMessage(`Đã gửi ${response.data?.created ?? recipientIds.length} thông báo.`);
+      setMessage(`Sent ${response.data?.created ?? recipientIds.length} notifications.`);
       setForm({ recipientIds: '', title: '', content: '' });
     } catch (err) {
-      setError(err.message || 'Không thể gửi thông báo hàng loạt.');
+      setError(err.message || 'Unable to send broadcast notifications.');
     } finally {
       setSaving(false);
     }
@@ -29,8 +29,8 @@ export default function AdminNotificationsPage() {
     <div className={styles.page}>
       <div className={styles.pageHeader}>
         <div>
-          <h1 className={styles.pageTitle}>Thông báo hàng loạt</h1>
-          <p className={styles.pageSub}>Nhập danh sách user ID, phân tách bằng dấu phẩy.</p>
+          <h1 className={styles.pageTitle}>Broadcast Notifications</h1>
+          <p className={styles.pageSub}>Enter user IDs separated by commas.</p>
         </div>
       </div>
       {message && <div className={styles.alert + ' ' + styles.alertSuccess}>{message}</div>}
@@ -38,17 +38,17 @@ export default function AdminNotificationsPage() {
       <form className={styles.filterBar} onSubmit={submit}>
         <label className={styles.filterItem}>
           <span>Recipient IDs</span>
-          <input value={form.recipientIds} onChange={(e) => setForm((f) => ({ ...f, recipientIds: e.target.value }))} required />
+          <input value={form.recipientIds} onChange={(event) => setForm((current) => ({ ...current, recipientIds: event.target.value }))} required />
         </label>
         <label className={styles.filterItem}>
-          <span>Tiêu đề</span>
-          <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} required />
+          <span>Title</span>
+          <input value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} required />
         </label>
         <label className={styles.filterItem}>
-          <span>Nội dung</span>
-          <input value={form.content} onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))} required />
+          <span>Content</span>
+          <input value={form.content} onChange={(event) => setForm((current) => ({ ...current, content: event.target.value }))} required />
         </label>
-        <button className={styles.btnPrimary} type="submit" disabled={saving}>Gửi broadcast</button>
+        <button className={styles.btnPrimary} type="submit" disabled={saving}>Send broadcast</button>
       </form>
     </div>
   );

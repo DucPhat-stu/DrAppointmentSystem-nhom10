@@ -1,20 +1,15 @@
 import { useEffect } from 'react';
 import styles from './MedicalRecordModal.module.css';
 
-/**
- * Full-detail modal for a medical record (read-only).
- */
 export default function MedicalRecordModal({ record, onClose }) {
-  // Close on Escape
   useEffect(() => {
-    function handleKey(e) {
-      if (e.key === 'Escape') onClose();
+    function handleKey(event) {
+      if (event.key === 'Escape') onClose();
     }
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
   }, [onClose]);
 
-  // Prevent body scroll
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
@@ -23,28 +18,27 @@ export default function MedicalRecordModal({ record, onClose }) {
   if (!record) return null;
 
   const fields = [
-    { label: 'Mã bệnh án', value: `#${record.recordCode}` },
-    { label: 'Ngày khám', value: record.visitDate },
-    { label: 'Ngày đặt lịch', value: record.appointmentDate || '—' },
-    { label: 'Check-in', value: record.checkinTime ? new Date(record.checkinTime).toLocaleString('vi-VN') : '—' },
-    { label: 'Tên bệnh', value: record.diseaseSummary, highlight: true },
-    { label: 'Khoa khám', value: record.department },
-    { label: 'Bác sĩ', value: record.doctorName },
-    { label: 'Toa thuốc', value: record.prescription || '—', long: true },
-    { label: 'Xét nghiệm', value: record.tests?.length > 0 ? record.tests.join(', ') : '—' },
-    { label: 'Ghi chú', value: record.notes || '—', long: true },
+    { label: 'Record code', value: `#${record.recordCode}` },
+    { label: 'Visit date', value: record.visitDate },
+    { label: 'Appointment date', value: record.appointmentDate || '-' },
+    { label: 'Check-in', value: record.checkinTime ? new Date(record.checkinTime).toLocaleString('en-US') : '-' },
+    { label: 'Diagnosis summary', value: record.diseaseSummary, highlight: true },
+    { label: 'Department', value: record.department },
+    { label: 'Doctor', value: record.doctorName },
+    { label: 'Prescription', value: record.prescription || '-', long: true },
+    { label: 'Tests', value: record.tests?.length > 0 ? record.tests.join(', ') : '-', long: true },
+    { label: 'Notes', value: record.notes || '-', long: true },
   ];
 
   return (
     <div className={styles.overlay} onClick={onClose} role="dialog" aria-modal="true">
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
+      <div className={styles.modal} onClick={(event) => event.stopPropagation()}>
         <div className={styles.header}>
           <div>
-            <h3 className={styles.title}>Chi tiết bệnh án</h3>
-            <p className={styles.subtitle}>#{record.recordCode} — {record.diseaseSummary}</p>
+            <h3 className={styles.title}>Medical record detail</h3>
+            <p className={styles.subtitle}>#{record.recordCode} - {record.diseaseSummary}</p>
           </div>
-          <button className={styles.closeBtn} onClick={onClose} type="button" aria-label="Đóng">
+          <button className={styles.closeBtn} onClick={onClose} type="button" aria-label="Close">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
@@ -52,7 +46,6 @@ export default function MedicalRecordModal({ record, onClose }) {
           </button>
         </div>
 
-        {/* Readonly warning */}
         <div className={styles.warning}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -61,13 +54,9 @@ export default function MedicalRecordModal({ record, onClose }) {
           Medical records are read-only
         </div>
 
-        {/* Fields */}
         <div className={styles.fields}>
-          {fields.map((field, i) => (
-            <div
-              key={i}
-              className={`${styles.field} ${field.long ? styles.fieldLong : ''} ${field.highlight ? styles.fieldHighlight : ''}`}
-            >
+          {fields.map((field) => (
+            <div key={field.label} className={`${styles.field} ${field.long ? styles.fieldLong : ''} ${field.highlight ? styles.fieldHighlight : ''}`}>
               <span className={styles.fieldLabel}>{field.label}</span>
               <span className={styles.fieldValue}>{field.value}</span>
             </div>
