@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import AppShell from '../components/layout/AppShell.jsx';
+import AdminShell from '../components/layout/AdminShell.jsx';
 import { useAuth } from '../hooks/useAuth.js';
 import HomePage from '../pages/HomePage/HomePage.jsx';
 import LoginPage from '../pages/LoginPage/LoginPage.jsx';
@@ -17,20 +18,24 @@ import DoctorAppointmentDashboardPage from '../pages/DoctorAppointmentDashboardP
 import DoctorLeavePage from '../pages/DoctorLeavePage.jsx';
 import AdminLeavePage from '../pages/AdminLeavePage.jsx';
 import AdminPromptPage from '../pages/AdminPromptPage.jsx';
+import AdminDashboardPage from '../pages/Admin/AdminDashboardPage.jsx';
+import AdminUsersPage from '../pages/Admin/AdminUsersPage.jsx';
+import AdminDoctorsPage from '../pages/Admin/AdminDoctorsPage.jsx';
+import AdminAppointmentsPage from '../pages/Admin/AdminAppointmentsPage.jsx';
 import RouteFallbackPage from '../pages/RouteFallbackPage.jsx';
 
 function ProtectedLayout() {
   const { session } = useAuth();
+  if (!session) return <Navigate to="/login" replace />;
+  return <AppShell><Outlet /></AppShell>;
+}
 
-  if (!session) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return (
-    <AppShell>
-      <Outlet />
-    </AppShell>
-  );
+function AdminLayout() {
+  const { session } = useAuth();
+  if (!session) return <Navigate to="/login" replace />;
+  const role = session.role?.replace(/^ROLE_/, '').toUpperCase();
+  if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return <Navigate to="/doctors" replace />;
+  return <AdminShell><Outlet /></AdminShell>;
 }
 
 function normalizeRole(role) {
@@ -40,11 +45,7 @@ function normalizeRole(role) {
 function RoleGate({ allowedRoles, children }) {
   const { session } = useAuth();
   const role = normalizeRole(session?.role);
-
-  if (!allowedRoles.includes(role)) {
-    return <Navigate to="/doctors" replace />;
-  }
-
+  if (!allowedRoles.includes(role)) return <Navigate to="/doctors" replace />;
   return children;
 }
 
@@ -64,86 +65,48 @@ export const router = createBrowserRouter([
     element: <RegisterPage />,
     errorElement: <RouteFallbackPage />,
   },
+
+  /* ── Admin routes — wrapped in AdminShell (light theme) ── */
+  {
+    path: '/admin',
+    element: <AdminLayout />,
+    errorElement: <RouteFallbackPage />,
+    children: [
+      { index: true,                    element: <AdminDashboardPage /> },
+      { path: 'users',                  element: <AdminUsersPage /> },
+      { path: 'doctors',                element: <AdminDoctorsPage /> },
+      { path: 'appointments',           element: <AdminAppointmentsPage /> },
+      { path: 'leaves',                 element: <AdminLeavePage /> },
+      { path: 'prompts',                element: <AdminPromptPage /> },
+    ],
+  },
+
+  /* ── Standard user routes — wrapped in AppShell (dark theme) ── */
   {
     element: <ProtectedLayout />,
     errorElement: <RouteFallbackPage />,
     children: [
-      {
-        path: '/doctors',
-        element: <DoctorListPage />,
-      },
-      {
-        path: '/doctors/:doctorId',
-        element: <DoctorDetailPage />,
-      },
-      {
-        path: '/appointments/book',
-        element: <BookAppointmentPage />,
-      },
-      {
-        path: '/appointments',
-        element: <MyAppointmentsPage />,
-      },
-      {
-        path: '/appointments/:appointmentId',
-        element: <AppointmentDetailPage />,
-      },
-      {
-        path: '/profile',
-        element: <ProfilePage />,
-      },
-      {
-        path: '/notifications',
-        element: <NotificationPage />,
-      },
-      {
-        path: '/chat',
-        element: <ChatbotPage />,
-      },
+      { path: '/doctors',                       element: <DoctorListPage /> },
+      { path: '/doctors/:doctorId',             element: <DoctorDetailPage /> },
+      { path: '/appointments/book',             element: <BookAppointmentPage /> },
+      { path: '/appointments',                  element: <MyAppointmentsPage /> },
+      { path: '/appointments/:appointmentId',   element: <AppointmentDetailPage /> },
+      { path: '/profile',                       element: <ProfilePage /> },
+      { path: '/notifications',                 element: <NotificationPage /> },
+      { path: '/chat',                          element: <ChatbotPage /> },
       {
         path: '/doctor/schedules',
-        element: (
-          <RoleGate allowedRoles={['DOCTOR', 'ADMIN']}>
-            <DoctorSchedulePage />
-          </RoleGate>
-        ),
+        element: <RoleGate allowedRoles={['DOCTOR', 'ADMIN']}><DoctorSchedulePage /></RoleGate>,
       },
       {
         path: '/doctor/appointments',
-        element: (
-          <RoleGate allowedRoles={['DOCTOR', 'ADMIN']}>
-            <DoctorAppointmentDashboardPage />
-          </RoleGate>
-        ),
+        element: <RoleGate allowedRoles={['DOCTOR', 'ADMIN']}><DoctorAppointmentDashboardPage /></RoleGate>,
       },
       {
         path: '/doctor/leaves',
-        element: (
-          <RoleGate allowedRoles={['DOCTOR', 'ADMIN']}>
-            <DoctorLeavePage />
-          </RoleGate>
-        ),
+        element: <RoleGate allowedRoles={['DOCTOR', 'ADMIN']}><DoctorLeavePage /></RoleGate>,
       },
-      {
-        path: '/admin/leaves',
-        element: (
-          <RoleGate allowedRoles={['ADMIN']}>
-            <AdminLeavePage />
-          </RoleGate>
-        ),
-      },
-      {
-        path: '/admin/prompts',
-        element: (
-          <RoleGate allowedRoles={['ADMIN']}>
-            <AdminPromptPage />
-          </RoleGate>
-        ),
-      },
-      {
-        path: '*',
-        element: <RouteFallbackPage />,
-      },
+      { path: '*', element: <RouteFallbackPage /> },
     ],
   },
 ]);

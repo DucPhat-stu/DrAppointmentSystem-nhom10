@@ -1,0 +1,221 @@
+/* ================================================================
+   AdminShell — Light/white enterprise theme
+   Palette: white bg, sky-blue accent (#0ea5e9), emerald (#10b981)
+   ================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.shell {
+  min-height: 100vh;
+  background: #f8fafc;
+  font-family: 'Inter', system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- Header ---- */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 20px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.brandIcon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #0ea5e9, #10b981);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.brandName {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.3px;
+}
+
+.adminBadge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #0ea5e9;
+  background: #e0f2fe;
+  border: 1px solid #bae6fd;
+  border-radius: 20px;
+  padding: 2px 10px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+/* ---- Top Navigation ---- */
+.topNav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  padding: 0 8px;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #64748b;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.navLink:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.navLink.active {
+  background: #e0f2fe;
+  color: #0284c7;
+  font-weight: 600;
+}
+
+.navIcon {
+  display: flex;
+  align-items: center;
+  opacity: 0.8;
+}
+
+/* ---- Header Right ---- */
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.switchBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.switchBtn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.userChip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #0ea5e9, #10b981);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.userName {
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+}
+
+.logoutBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #ef4444;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.logoutBtn:hover {
+  background: #fee2e2;
+}
+
+/* ---- Main Content ---- */
+.main {
+  flex: 1;
+  padding: 28px 32px;
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0 16px;
+    gap: 8px;
+    overflow-x: auto;
+  }
+
+  .topNav {
+    display: none;
+  }
+
+  .adminBadge {
+    display: none;
+  }
+
+  .main {
+    padding: 16px;
+  }
+}

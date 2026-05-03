@@ -1,0 +1,437 @@
+/* AdminDashboardPage — Power BI enterprise healthcare analytics */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ---- Page Header ---- */
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pageTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px;
+  letter-spacing: -0.5px;
+}
+
+.pageDate {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.liveBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #15803d;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  border-radius: 20px;
+  padding: 4px 12px;
+}
+
+.liveDot {
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ---- KPI Grid ---- */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.kpiCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s, transform 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.kpiCard::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--accent, #0ea5e9);
+  border-radius: 14px 0 0 14px;
+}
+
+.kpiCard:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.kpiIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kpiBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.kpiLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.kpiValue {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.1;
+  letter-spacing: -1px;
+}
+
+.kpiSub {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.kpiTrend {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.up { color: #15803d; background: #dcfce7; }
+.down { color: #dc2626; background: #fee2e2; }
+
+/* ---- Charts Grid ---- */
+.chartsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+.chartCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.chartHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.chartTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.chartTotal {
+  font-size: 12px;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+/* ---- Donut Chart ---- */
+.donutWrapper {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.donutSvg {
+  width: 140px;
+  height: 140px;
+  flex-shrink: 0;
+}
+
+.donutCenter {
+  font-size: 14px;
+  font-weight: 700;
+  fill: #0f172a;
+}
+
+.donutSub {
+  font-size: 7px;
+  fill: #94a3b8;
+}
+
+.donutEmpty {
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.donutLegend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.legendRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legendLabel {
+  font-size: 12px;
+  color: #475569;
+  flex: 1;
+  font-weight: 500;
+}
+
+.legendVal {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* ---- Bar Chart ---- */
+.barChart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.barRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.barLabel {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #475569;
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.barTrack {
+  flex: 1;
+  height: 8px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+.barValue {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f172a;
+  width: 28px;
+  text-align: right;
+}
+
+.barPct {
+  font-size: 11px;
+  color: #94a3b8;
+  width: 36px;
+}
+
+/* ---- Health List ---- */
+.healthList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.healthRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.healthDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ok   { background: #22c55e; }
+.err  { background: #ef4444; }
+.warn { background: #f59e0b; }
+
+.healthName {
+  flex: 1;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #334155;
+}
+
+.healthPort {
+  font-size: 11px;
+  color: #94a3b8;
+  font-family: monospace;
+}
+
+.healthStatus {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.statusOk   { color: #15803d; background: #dcfce7; }
+.statusErr  { color: #dc2626; background: #fee2e2; }
+.statusWarn { color: #92400e; background: #fef3c7; }
+
+/* ---- Quick Links ---- */
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 12px;
+}
+
+.quickGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.quickCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  cursor: pointer;
+  border-left: 4px solid var(--c, #0ea5e9);
+}
+
+.quickCard:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.quickIcon {
+  font-size: 22px;
+}
+
+.quickLabel {
+  flex: 1;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.quickArrow {
+  color: #94a3b8;
+  transition: color 0.15s;
+}
+
+.quickCard:hover .quickArrow {
+  color: var(--c, #0ea5e9);
+}
+
+/* ---- Loading ---- */
+.loadingGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.skeleton {
+  height: 100px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.errorBanner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+}
+
+@media (max-width: 1200px) {
+  .kpiGrid { grid-template-columns: repeat(2, 1fr); }
+  .chartsGrid { grid-template-columns: 1fr 1fr; }
+  .quickGrid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .kpiGrid { grid-template-columns: 1fr; }
+  .chartsGrid { grid-template-columns: 1fr; }
+  .quickGrid { grid-template-columns: 1fr 1fr; }
+}
