@@ -8,6 +8,7 @@ import Divider from '../../components/forms/Divider.jsx';
 import SocialButton from '../../components/forms/SocialButton.jsx';
 import { useAuth } from '../../hooks/useAuth.js';
 import { ApiError } from '../../services/httpClient.js';
+import * as authService from '../../services/authService.js';
 import styles from './LoginPage.module.css';
 
 function homePathForRole(role) {
@@ -39,7 +40,7 @@ function validate(form) {
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { loginAction, isAuthenticated, session } = useAuth();
+  const { loginAction, isAuthenticated, session, setSession } = useAuth();
 
   // Redirect if already logged in
   if (isAuthenticated) {
@@ -51,7 +52,14 @@ export default function LoginPage() {
   const [form, setForm] = useState({
     email: '',
     password: '',
+    phone: '',
+    otp: '',
+    doctorCode: 'DOCTOR-0001',
+    twoFactorCode: '123456',
   });
+  const [mode, setMode] = useState('password');
+  const [otpRequested, setOtpRequested] = useState(false);
+  const [infoMessage, setInfoMessage] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -67,12 +75,33 @@ export default function LoginPage() {
       });
     }
     if (submitError) setSubmitError('');
+    if (infoMessage) setInfoMessage('');
+  };
+
+  const storeSessionFromResponse = (response, fallback = {}) => {
+    const data = response.data ?? {};
+    const sessionData = {
+      userId: data.userId ?? null,
+      email: data.email ?? fallback.email ?? form.email,
+      role: data.role ?? fallback.role ?? 'PATIENT',
+      accessToken: data.accessToken ?? null,
+      refreshToken: data.refreshToken ?? null,
+      fullName: data.fullName ?? fallback.fullName ?? (fallback.email ?? form.email).split('@')[0],
+    };
+    setSession(sessionData);
+    return sessionData;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const validationErrors = validate(form);
+    const validationErrors = mode === 'password' || mode === 'twoFactor' ? validate(form) : {};
+    if (mode === 'otp' && !form.phone.trim()) {
+      validationErrors.phone = 'Phone is required';
+    }
+    if (mode === 'doctorCode' && !form.doctorCode.trim()) {
+      validationErrors.doctorCode = 'Doctor code is required';
+    }
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -106,12 +135,66 @@ export default function LoginPage() {
     }
   };
 
+  const handleAlternateSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrors({});
+    setSubmitError('');
+    setInfoMessage('');
+
+    try {
+      if (mode === 'otp') {
+        if (!otpRequested) {
+          await authService.requestOtp(form.phone);
+          setOtpRequested(true);
+          setInfoMessage('Mock OTP sent. Use 123456 for demo.');
+          return;
+        }
+        const response = await authService.verifyOtp({ phone: form.phone, otp: form.otp });
+        const sessionData = storeSessionFromResponse(response, { email: form.phone });
+        navigate(homePathForRole(sessionData.role));
+        return;
+      }
+
+      if (mode === 'doctorCode') {
+        const response = await authService.loginByDoctorCode(form.doctorCode);
+        const sessionData = storeSessionFromResponse(response, { role: 'DOCTOR', email: 'doctor01@healthcare.local' });
+        navigate(homePathForRole(sessionData.role));
+        return;
+      }
+
+      if (mode === 'twoFactor') {
+        const response = await authService.twoFactorLogin({
+          email: form.email,
+          password: form.password,
+          code: form.twoFactorCode,
+        });
+        const sessionData = storeSessionFromResponse(response);
+        navigate(homePathForRole(sessionData.role));
+      }
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.errorCode === 'UNAUTHORIZED' || err.status === 401) {
+          setSubmitError('Invalid email or password. Please try again.');
+        } else if (err.errorCode === 'VALIDATION_ERROR') {
+          setSubmitError(err.message || 'Please check your input.');
+        } else {
+          setSubmitError(err.message || 'Login failed. Please try again.');
+        }
+      } else {
+        setSubmitError('Unable to connect to server. Please try again later.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthLayout
       title="Welcome back"
       subtitle="Sign in to your account to continue."
     >
-      <form className={styles.form} onSubmit={handleSubmit} noValidate>
+      <form className={styles.form} onSubmit={mode === 'password' ? handleSubmit : handleAlternateSubmit} noValidate>
         {/* Success banner after registration */}
         {justRegistered && (
           <div className={styles.successBanner}>
@@ -123,8 +206,30 @@ export default function LoginPage() {
           </div>
         )}
 
+        <div className={styles.tabs} role="tablist" aria-label="Login methods">
+          {[
+            ['password', 'Email'],
+            ['otp', 'OTP'],
+            ['doctorCode', 'Doctor'],
+            ['twoFactor', '2FA'],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              className={`${styles.tabButton} ${mode === key ? styles.tabButtonActive : ''}`}
+              onClick={() => {
+                setMode(key);
+                setSubmitError('');
+                setInfoMessage('');
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
         {/* Email */}
-        <InputField
+        {(mode === 'password' || mode === 'twoFactor') && <InputField
           id="login-email"
           label="Email"
           type="email"
@@ -140,10 +245,10 @@ export default function LoginPage() {
               <polyline points="22,6 12,13 2,6"/>
             </svg>
           }
-        />
+        />}
 
         {/* Password */}
-        <InputField
+        {(mode === 'password' || mode === 'twoFactor') && <InputField
           id="login-password"
           label="Password"
           type="password"
@@ -159,22 +264,73 @@ export default function LoginPage() {
               <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
           }
-        />
+        />}
+
+        {mode === 'twoFactor' && (
+          <InputField
+            id="login-2fa"
+            label="2FA code"
+            value={form.twoFactorCode}
+            onChange={handleChange('twoFactorCode')}
+            error={errors.twoFactorCode}
+            required
+          />
+        )}
+
+        {mode === 'otp' && (
+          <>
+            <InputField
+              id="login-phone"
+              label="Phone"
+              value={form.phone}
+              onChange={handleChange('phone')}
+              error={errors.phone}
+              placeholder="0901000001"
+              required
+            />
+            {otpRequested && (
+              <InputField
+                id="login-otp"
+                label="OTP"
+                value={form.otp}
+                onChange={handleChange('otp')}
+                placeholder="123456"
+                required
+              />
+            )}
+            <p className={styles.hint}>Demo OTP is always 123456.</p>
+          </>
+        )}
+
+        {mode === 'doctorCode' && (
+          <>
+            <InputField
+              id="login-doctor-code"
+              label="Doctor code"
+              value={form.doctorCode}
+              onChange={handleChange('doctorCode')}
+              error={errors.doctorCode}
+              required
+            />
+            <p className={styles.hint}>Seed demo doctor code: DOCTOR-0001.</p>
+          </>
+        )}
 
         {/* Remember Me + Forgot Password */}
-        <div className={styles.options}>
+        {mode === 'password' && <div className={styles.options}>
           <Checkbox
             id="login-remember"
             label="Remember me"
             checked={rememberMe}
             onChange={(e) => setRememberMe(e.target.checked)}
           />
-          <a href="#" className={styles.forgotLink} onClick={(e) => e.preventDefault()}>
+          <Link to="/forgot-password" className={styles.forgotLink}>
             Forgot password?
-          </a>
-        </div>
+          </Link>
+        </div>}
 
         {/* Submit Error */}
+        {infoMessage && <div className={styles.successBanner}>{infoMessage}</div>}
         {submitError && (
           <div className={styles.submitError}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -195,7 +351,7 @@ export default function LoginPage() {
           fullWidth
           loading={loading}
         >
-          Sign In
+          {mode === 'otp' && !otpRequested ? 'Send OTP' : 'Sign In'}
         </Button>
 
         {/* Divider */}

@@ -16,3 +16,8 @@ CREATE INDEX IF NOT EXISTS idx_users_password_reset_token ON users(password_rese
 -- Index for doctor code login
 CREATE INDEX IF NOT EXISTS idx_users_doctor_code ON users(doctor_code)
     WHERE doctor_code IS NOT NULL;
+
+UPDATE users
+SET doctor_code = 'DOCTOR-0001'
+WHERE email = 'doctor01@healthcare.local'
+  AND doctor_code IS NULL;

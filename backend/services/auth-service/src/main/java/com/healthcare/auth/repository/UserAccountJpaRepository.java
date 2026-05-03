@@ -10,4 +10,10 @@ import java.util.UUID;
 public interface UserAccountJpaRepository extends JpaRepository<UserAccountEntity, UUID>,
         JpaSpecificationExecutor<UserAccountEntity> {
     Optional<UserAccountEntity> findByEmailIgnoreCase(String email);
+
+    Optional<UserAccountEntity> findByPhone(String phone);
+
+    Optional<UserAccountEntity> findByPasswordResetToken(String passwordResetToken);
+
+    Optional<UserAccountEntity> findByDoctorCodeIgnoreCase(String doctorCode);
 }

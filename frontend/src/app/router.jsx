@@ -5,6 +5,8 @@ import { useAuth } from '../hooks/useAuth.js';
 import HomePage from '../pages/HomePage/HomePage.jsx';
 import LoginPage from '../pages/LoginPage/LoginPage.jsx';
 import RegisterPage from '../pages/RegisterPage/RegisterPage.jsx';
+import ForgotPasswordPage from '../pages/ForgotPasswordPage.jsx';
+import ResetPasswordPage from '../pages/ResetPasswordPage.jsx';
 import DoctorListPage from '../pages/DoctorListPage.jsx';
 import DoctorDetailPage from '../pages/DoctorDetailPage.jsx';
 import BookAppointmentPage from '../pages/BookAppointmentPage.jsx';
@@ -13,6 +15,7 @@ import MyAppointmentsPage from '../pages/MyAppointmentsPage.jsx';
 import ProfilePage from '../pages/ProfilePage.jsx';
 import NotificationPage from '../pages/NotificationPage.jsx';
 import ChatbotPage from '../pages/ChatbotPage.jsx';
+import TwoFactorPage from '../pages/TwoFactorPage.jsx';
 import DoctorSchedulePage from '../pages/DoctorSchedulePage.jsx';
 import DoctorAppointmentDashboardPage from '../pages/DoctorAppointmentDashboardPage.jsx';
 import DoctorLeavePage from '../pages/DoctorLeavePage.jsx';
@@ -65,6 +68,16 @@ export const router = createBrowserRouter([
     element: <RegisterPage />,
     errorElement: <RouteFallbackPage />,
   },
+  {
+    path: '/forgot-password',
+    element: <ForgotPasswordPage />,
+    errorElement: <RouteFallbackPage />,
+  },
+  {
+    path: '/reset-password',
+    element: <ResetPasswordPage />,
+    errorElement: <RouteFallbackPage />,
+  },
 
   /* ── Admin routes — wrapped in AdminShell (light theme) ── */
   {
@@ -94,6 +107,7 @@ export const router = createBrowserRouter([
       { path: '/profile',                       element: <ProfilePage /> },
       { path: '/notifications',                 element: <NotificationPage /> },
       { path: '/chat',                          element: <ChatbotPage /> },
+      { path: '/security/2fa',                  element: <TwoFactorPage /> },
       {
         path: '/doctor/schedules',
         element: <RoleGate allowedRoles={['DOCTOR', 'ADMIN']}><DoctorSchedulePage /></RoleGate>,

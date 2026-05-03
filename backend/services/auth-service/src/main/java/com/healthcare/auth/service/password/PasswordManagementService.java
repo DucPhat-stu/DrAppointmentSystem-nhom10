@@ -59,9 +59,7 @@ public class PasswordManagementService {
      */
     @Transactional
     public void resetPassword(String token, String newPassword) {
-        UserAccountEntity user = userRepository.findAll().stream()
-                .filter(u -> token.equals(u.getPasswordResetToken()))
-                .findFirst()
+        UserAccountEntity user = userRepository.findByPasswordResetToken(token)
                 .orElseThrow(() -> new ApiException(ErrorCode.VALIDATION_ERROR, "Invalid or expired reset token"));
 
         if (user.getPasswordResetExpiresAt() == null || user.getPasswordResetExpiresAt().isBefore(OffsetDateTime.now())) {
