@@ -50,9 +50,9 @@ export default function LoginPage() {
   const justRegistered = location.state?.registered;
 
   const [form, setForm] = useState({
-    email: '',
-    password: '',
-    phone: '',
+    email: 'admin01@healthcare.local',
+    password: 'Admin@123',
+    phone: '0901000001',
     otp: '',
     doctorCode: 'DOCTOR-0001',
     twoFactorCode: '123456',
