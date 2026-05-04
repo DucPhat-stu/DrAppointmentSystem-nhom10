@@ -22,11 +22,19 @@ class NotificationServiceTest {
     @Mock
     private NotificationJpaRepository notificationRepository;
 
+    @Mock
+    private NotificationPreferenceService preferenceService;
+
     private NotificationService service;
 
     @BeforeEach
     void setUp() {
-        service = new NotificationService(notificationRepository);
+        service = new NotificationService(notificationRepository, preferenceService);
+        // Allow all notifications by default so existing tests focus on idempotency logic.
+        org.mockito.Mockito.lenient().when(preferenceService.allows(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any()
+        )).thenReturn(true);
     }
 
     @Test
